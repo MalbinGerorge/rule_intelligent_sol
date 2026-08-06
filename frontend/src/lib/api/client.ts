@@ -1,0 +1,24 @@
+import { API_BASE } from '$lib/config/env';
+
+export class ApiError extends Error {
+	constructor(
+		public status: number,
+		message: string
+	) {
+		super(message);
+	}
+}
+
+export async function apiGet<T>(path: string, params?: Record<string, string | number>): Promise<T> {
+	const url = new URL(`${API_BASE}${path}`);
+	if (params) {
+		for (const [key, value] of Object.entries(params)) {
+			url.searchParams.set(key, String(value));
+		}
+	}
+	const res = await fetch(url);
+	if (!res.ok) {
+		throw new ApiError(res.status, `${path} failed with ${res.status}`);
+	}
+	return res.json();
+}
