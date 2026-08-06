@@ -8,3 +8,14 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Caches
+.ruff_cache/
+.pytest_cache/
+
+# Secrets — never commit real credentials
+.env
+
+# Logs
+logs/*
+!logs/.gitkeep

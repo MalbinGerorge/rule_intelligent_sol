@@ -1,0 +1,49 @@
+"""
+Application settings, loaded from environment variables / .env.
+
+Postgres connection is built from individual POSTGRES_* parts (host,
+port, username, password, db name) rather than one raw DSN string, so
+special characters in the password (@, :, *, etc.) are safely
+URL-encoded rather than breaking the connection string.
+
+QRADAR_* variables are only needed once ingestion services (subtask 2)
+are implemented — per-customer QRadar host/token live in the
+`customers` / `customer_credentials` tables, not here, since this is
+multi-tenant.
+"""
+from urllib.parse import quote_plus
+
+from pydantic import computed_field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    environment: str = "development"
+    log_level: str = "INFO"
+
+    postgres_username: str = "qradar"
+    postgres_password: str = "qradar"
+    postgres_host: str = "localhost"
+    postgres_port: int = 5432
+    postgres_db_name: str = "rule_intelligent_sol"
+    # used to encrypt/decrypt customer_credentials.token_encrypted via
+    # Postgres pgcrypto (pgp_sym_encrypt/pgp_sym_decrypt). Change this in
+    # every real environment — never use the default outside local dev.
+    token_encryption_key: str = "change-me-dev-only"
+
+    qradar_api_version: str = "20.0"
+
+    @computed_field
+    @property
+    def pg_dsn(self) -> str:
+        user = quote_plus(self.postgres_username)
+        password = quote_plus(self.postgres_password)
+        return (
+            f"postgresql://{user}:{password}"
+            f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db_name}"
+        )
+
+
+settings = Settings()
