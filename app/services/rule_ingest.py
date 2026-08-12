@@ -44,11 +44,11 @@ def upsert_rules(session: Session, customer_id: int, pages: list[str]) -> int:
                     INSERT INTO rules (
                         customer_id, qradar_rule_id, identifier, name, type, owner, origin,
                         object_type, building_block_subtype, enabled, linked_rule_identifier,
-                        created_at, updated_at, raw_json
+                        created_at, updated_at, raw_json, needs_reparse
                     ) VALUES (
                         :customer_id, :qradar_rule_id, :identifier, :name, :type, :owner, :origin,
                         :object_type, :building_block_subtype, :enabled, :linked_rule_identifier,
-                        :created_at, :updated_at, :raw_json
+                        :created_at, :updated_at, :raw_json, true
                     )
                     ON CONFLICT (customer_id, qradar_rule_id) DO UPDATE SET
                         identifier = EXCLUDED.identifier,
@@ -63,7 +63,16 @@ def upsert_rules(session: Session, customer_id: int, pages: list[str]) -> int:
                         created_at = EXCLUDED.created_at,
                         updated_at = EXCLUDED.updated_at,
                         raw_json = EXCLUDED.raw_json,
-                        synced_at = now()
+                        synced_at = now(),
+                        -- Decision made ONCE, here, at ingest time: did the incoming
+                        -- modification_date move forward past what we had stored?
+                        -- Both sides are QRadar's own updated_at — never our wall clock.
+                        -- If unchanged, preserve whatever needs_reparse currently is
+                        -- (don't clobber a still-pending flag back to false).
+                        needs_reparse = CASE
+                            WHEN rules.updated_at < EXCLUDED.updated_at THEN true
+                            ELSE rules.needs_reparse
+                        END
                     """
                 ),
                 {

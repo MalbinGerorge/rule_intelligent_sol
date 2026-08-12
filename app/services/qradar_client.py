@@ -57,6 +57,7 @@ ENDPOINTS = {
     "rules_offense_contributions": "/api/analytics/rules_offense_contributions",
     "building_blocks": "/api/analytics/building_blocks",
     "rules": "/api/analytics/rules",
+    "log_source_types": " /config/event_sources/log_source_management/log_source_types",
 }
 MITRE_APP_PROXY_BASE = "/console/plugins/app_proxy:UseCaseManager_Service"
 
@@ -223,3 +224,6 @@ class QRadarClient:
 
     def fetch_rules(self) -> list[str]:
         return list(self._paginate_text(ENDPOINTS["rules"], accept="application/json"))
+
+    def fetch_log_source_types(self) -> list[str]:
+        return list(self._paginate_text(ENDPOINTS["log_source_types"], accept="application/json"))

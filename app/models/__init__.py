@@ -8,6 +8,8 @@ from app.models.building_block_reference import BuildingBlockReference
 from app.models.rule_building_block import RuleBuildingBlock
 from app.models.validation_result import ValidationResult
 from app.models.sync_run import SyncRun
+from app.models.rule_condition import RuleCondition
+from app.models.log_source_type_reference import LogSourceTypeReference
 
 __all__ = [
     "Customer",
@@ -20,4 +22,6 @@ __all__ = [
     "RuleBuildingBlock",
     "ValidationResult",
     "SyncRun",
+    "RuleCondition",
+    "LogSourceTypeReference",
 ]

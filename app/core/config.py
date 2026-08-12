@@ -34,6 +34,12 @@ class Settings(BaseSettings):
     token_encryption_key: str = "change-me-dev-only"
 
     qradar_api_version: str = "20.0"
+    # Neo4j — matches docker-compose.yml's default credentials for local
+    # dev. Same rule as everything else here: change neo4j_password
+    # before running against anything beyond your own machine.
+    neo4j_uri: str = "bolt://localhost:7687"
+    neo4j_username: str = "neo4j"
+    neo4j_password: str = "Sillywilly79**"
 
     @computed_field
     @property

@@ -1,0 +1,27 @@
+services:
+  neo4j:
+    image: neo4j:5.24-community
+    container_name: rule_intelligent_neo4j
+    ports:
+      - "7474:7474"   # browser UI (http://localhost:7474)
+      - "7687:7687"   # bolt protocol (what the Python driver connects to)
+    environment:
+      # username is always "neo4j" — password set here. Change this
+      # before running against anything beyond local dev, and keep it
+      # out of version control the same way we treat the Postgres
+      # password and QRadar token.
+      - NEO4J_AUTH=neo4j/Sillywilly79**
+      - NEO4J_PLUGINS=["apoc"]  # useful for graph algorithms later (e.g. blast-radius queries)
+      - NEO4J_dbms_memory_heap_max__size=1G
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  neo4j_data:
+  neo4j_logs:
