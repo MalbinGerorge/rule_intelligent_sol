@@ -1,3 +1,6 @@
+// Base fetch wrapper: consistent error handling for every API call.
+// Resource-specific files (e.g. rules.ts) call this instead of using
+// fetch() directly.
 import { API_BASE } from '$lib/config/env';
 
 export class ApiError extends Error {
@@ -17,6 +20,18 @@ export async function apiGet<T>(path: string, params?: Record<string, string | n
 		}
 	}
 	const res = await fetch(url);
+	if (!res.ok) {
+		throw new ApiError(res.status, `${path} failed with ${res.status}`);
+	}
+	return res.json();
+}
+
+export async function apiPost<T>(path: string, body: Record<string, unknown>): Promise<T> {
+	const res = await fetch(`${API_BASE}${path}`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(body)
+	});
 	if (!res.ok) {
 		throw new ApiError(res.status, `${path} failed with ${res.status}`);
 	}

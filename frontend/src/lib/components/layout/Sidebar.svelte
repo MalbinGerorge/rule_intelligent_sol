@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { Activity, Network, Microscope, PlayCircle, Shield } from 'lucide-svelte';
+	import { Activity, Network, MessageCircleQuestion, Microscope, PlayCircle, Shield } from 'lucide-svelte';
 
 	const navItems = [
 		{ label: 'Rule Health', href: '/', icon: Activity },
 		{ label: 'Graph Search', href: '/graph-search', icon: Network },
+		{ label: 'Rule Explorer', href: '/rule-expl', icon: MessageCircleQuestion },
 		{ label: 'Rule Analyzer', href: '/rule-analyzer', icon: Microscope },
 		{ label: 'Rule Simulator', href: '/rule-simulator', icon: PlayCircle }
 	];
