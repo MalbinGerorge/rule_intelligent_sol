@@ -1,7 +1,8 @@
 """
 Production-hardened HTTP client for the QRadar endpoints this project
 uses: rules_with_data, rules_offense_contributions, building_blocks,
-rules, and the MITRE coverage app-proxy endpoint.
+rules, log source types/instances, and the MITRE coverage app-proxy
+endpoint.
 
 One client instance = one customer's QRadar console (multi-tenant: host
 and token come from the `customers` / `customer_credentials` tables,
@@ -57,7 +58,29 @@ ENDPOINTS = {
     "rules_offense_contributions": "/api/analytics/rules_offense_contributions",
     "building_blocks": "/api/analytics/building_blocks",
     "rules": "/api/analytics/rules",
-    "log_source_types": " /config/event_sources/log_source_management/log_source_types",
+    # CONFIRMED BUG FIX: had a leading space before "/config/..." in an
+    # earlier version -- self.base_url + path would have produced a
+    # malformed URL ("https://host /config/..."), silently breaking
+    # every call to fetch_log_source_types(). Also missing the "/api"
+    # prefix every other endpoint here has.
+    "log_source_types": "/api/config/event_sources/log_source_management/log_source_types",
+    "log_sources": "/api/config/event_sources/log_source_management/log_sources",
+    "reference_sets": "/api/reference_data_collections/sets",
+    "reference_set_entries": "/api/reference_data_collections/set_entries",
+    # DSM field extraction data -- confirmed real field shapes from
+    # QRadar's own API docs (pasted directly by the user). One parent
+    # (regex_properties), seven children -- each child is a different
+    # extraction MECHANISM depending on the log source's raw payload
+    # format. See app/services/custom_property_sync.py for how these
+    # get combined into two Postgres tables.
+    "regex_properties": "/api/config/event_sources/custom_properties/regex_properties",
+    "property_expressions": "/api/config/event_sources/custom_properties/property_expressions",
+    "property_json_expressions": "/api/config/event_sources/custom_properties/property_json_expressions",
+    "property_xml_expressions": "/api/config/event_sources/custom_properties/property_xml_expressions",
+    "property_cef_expressions": "/api/config/event_sources/custom_properties/property_cef_expressions",
+    "property_leef_expressions": "/api/config/event_sources/custom_properties/property_leef_expressions",
+    "property_nvp_expressions": "/api/config/event_sources/custom_properties/property_nvp_expressions",
+    "property_aql_expressions": "/api/config/event_sources/custom_properties/property_aql_expressions",
 }
 MITRE_APP_PROXY_BASE = "/console/plugins/app_proxy:UseCaseManager_Service"
 
@@ -227,3 +250,168 @@ class QRadarClient:
 
     def fetch_log_source_types(self) -> list[str]:
         return list(self._paginate_text(ENDPOINTS["log_source_types"], accept="application/json"))
+
+    def fetch_log_sources(self) -> list[str]:
+        """GET /config/event_sources/log_source_management/log_sources —
+        confirmed real shape includes id, name, type_id, enabled,
+        status.status, last_event_time, average_eps, description (see
+        project notes: description is analyst-entered and NOT reliably
+        kept current -- treat as a hint, never as confirmed fact).
+        No server-side type_id filter used here (unconfirmed whether
+        this endpoint supports a `filter` query param) -- callers
+        filter client-side. Worth revisiting if a real console confirms
+        filter=type_id=X works, to avoid pulling the full log source
+        list on every call."""
+        return list(self._paginate_text(ENDPOINTS["log_sources"], accept="application/json"))
+
+    def fetch_reference_sets(self) -> list[str]:
+        """GET /reference_data_collections/sets — confirmed real shape
+        from a live console includes id (the collection ID -- used to
+        cross-reference entries), name, namespace, number_of_entries,
+        entry_type, creation_time, time_to_live, expiry_type."""
+        return list(self._paginate_text(ENDPOINTS["reference_sets"], accept="application/json"))
+
+    def fetch_reference_set_entries(self) -> list[str]:
+        """GET /reference_data_collections/set_entries — returns ALL
+        entries across EVERY reference set on the console in one call;
+        confirmed real shape includes collection_id (matches a set's
+        own id from fetch_reference_sets), value, source, first_seen,
+        last_seen. Callers filter client-side by collection_id -- no
+        confirmed server-side filter for this endpoint, same tradeoff
+        as fetch_log_sources()."""
+        return list(self._paginate_text(ENDPOINTS["reference_set_entries"], accept="application/json"))
+
+    def fetch_regex_properties(self) -> list[str]:
+        """GET /config/event_sources/custom_properties/regex_properties
+        -- the parent list of every custom event property (name,
+        property_type, owner). Extraction logic lives in the 7
+        expression endpoints below, not here."""
+        return list(self._paginate_text(ENDPOINTS["regex_properties"], accept="application/json"))
+
+    def fetch_property_expressions(self) -> list[str]:
+        """Regex-based extraction expressions."""
+        return list(self._paginate_text(ENDPOINTS["property_expressions"], accept="application/json"))
+
+    def fetch_property_json_expressions(self) -> list[str]:
+        return list(self._paginate_text(ENDPOINTS["property_json_expressions"], accept="application/json"))
+
+    def fetch_property_xml_expressions(self) -> list[str]:
+        return list(self._paginate_text(ENDPOINTS["property_xml_expressions"], accept="application/json"))
+
+    def fetch_property_cef_expressions(self) -> list[str]:
+        return list(self._paginate_text(ENDPOINTS["property_cef_expressions"], accept="application/json"))
+
+    def fetch_property_leef_expressions(self) -> list[str]:
+        return list(self._paginate_text(ENDPOINTS["property_leef_expressions"], accept="application/json"))
+
+    def fetch_property_nvp_expressions(self) -> list[str]:
+        return list(self._paginate_text(ENDPOINTS["property_nvp_expressions"], accept="application/json"))
+
+    def fetch_property_aql_expressions(self) -> list[str]:
+        return list(self._paginate_text(ENDPOINTS["property_aql_expressions"], accept="application/json"))
+
+    def _post(self, path: str, accept: str, data: dict) -> requests.Response:
+        """POST counterpart to _get -- same retry/error handling, used
+        only for the Ariel search lifecycle (create search, cancel
+        search). No pagination concept applies to POST here."""
+        headers = {"Accept": accept, "SEC": self.token}
+        url = f"{self.base_url}{path}"
+
+        last_exc: Exception | None = None
+        for attempt in range(1, self.max_retries + 2):
+            if self.request_delay:
+                time.sleep(self.request_delay)
+            try:
+                resp = requests.post(
+                    url, headers=headers, data=data, timeout=self.timeout, verify=self.verify_ssl
+                )
+            except (requests.ConnectionError, requests.Timeout) as exc:
+                last_exc = exc
+                if attempt > self.max_retries:
+                    raise QRadarAPIError(f"Network error after {attempt} attempts: {exc}", url=url) from exc
+                time.sleep(self.backoff_base * (2 ** (attempt - 1)))
+                continue
+
+            if resp.status_code in (200, 201):
+                return resp
+
+            if resp.status_code in RETRYABLE_STATUS_CODES and attempt <= self.max_retries:
+                time.sleep(self.backoff_base * (2 ** (attempt - 1)))
+                continue
+
+            raise QRadarAPIError(
+                f"POST {url} failed with {resp.status_code}: {resp.text[:500]}",
+                status_code=resp.status_code,
+                url=url,
+            )
+        raise QRadarAPIError(f"Exhausted retries for {url}: {last_exc}", url=url)  # pragma: no cover
+
+    def create_ariel_search(self, aql_query: str) -> dict:
+        """POST /ariel/searches -- starts an ASYNC search, returns
+        immediately with search metadata (including some kind of
+        search identifier and an initial status). NEEDS LIVE
+        VERIFICATION: the exact response field name for the search
+        identifier ("search_id" vs "cursor_id" vs "id") is NOT
+        confirmed against a real response -- built from QRadar's
+        general documented pattern, not a real sample like the
+        reference_data_collections endpoints were. run_ariel_search()
+        below tries several likely field names defensively, but this
+        should be confirmed with one real test call before being
+        fully trusted."""
+        return self._post(
+            "/api/ariel/searches", accept="application/json", data={"query_expression": aql_query}
+        ).json()
+
+    def get_ariel_search_status(self, search_id: str) -> dict:
+        """GET /ariel/searches/{search_id} -- poll until status is
+        COMPLETED (or ERROR/CANCELED)."""
+        return self._get(f"/api/ariel/searches/{search_id}", accept="application/json").json()
+
+    def get_ariel_search_results(self, search_id: str) -> dict:
+        """GET /ariel/searches/{search_id}/results -- only meaningful
+        once status == COMPLETED."""
+        return self._get(f"/api/ariel/searches/{search_id}/results", accept="application/json").json()
+
+    def cancel_ariel_search(self, search_id: str) -> None:
+        """POST /ariel/searches/{search_id} with status=CANCELED --
+        confirmed as a real, documented QRadar capability. Used by
+        run_ariel_search() to explicitly stop a search that's taking
+        too long, rather than leaving it running orphaned server-side
+        after our own code gives up waiting."""
+        try:
+            self._post(f"/api/ariel/searches/{search_id}", accept="application/json", data={"status": "CANCELED"})
+        except QRadarAPIError:
+            pass  # best-effort -- we're already in a failure path, don't raise a second error over this
+
+    def run_ariel_search(
+        self, aql_query: str, max_poll_attempts: int = 20, poll_interval: float = 2.0
+    ) -> dict:
+        """Runs the FULL async search lifecycle in one call: create ->
+        poll status until COMPLETED/ERROR/CANCELED -> fetch results.
+        Bounded by max_poll_attempts so a stuck/slow QRadar search
+        can't hang our own code forever -- if it hasn't completed
+        within that many polls, it's explicitly CANCELED and a
+        QRadarAPIError is raised, rather than hanging indefinitely or
+        leaving an orphaned still-running search server-side."""
+        search = self.create_ariel_search(aql_query)
+        # Defensive: try the field names QRadar's documented API
+        # patterns commonly use, since the exact one isn't confirmed
+        # against a real response yet -- see create_ariel_search's docstring.
+        search_id = search.get("search_id") or search.get("cursor_id") or search.get("id")
+        if search_id is None:
+            raise QRadarAPIError(f"Could not find a search identifier in the response: {search}")
+
+        for _ in range(max_poll_attempts):
+            time.sleep(poll_interval)
+            status_resp = self.get_ariel_search_status(search_id)
+            status = status_resp.get("status")
+            if status == "COMPLETED":
+                return self.get_ariel_search_results(search_id)
+            if status in ("ERROR", "CANCELED"):
+                raise QRadarAPIError(f"Ariel search {search_id} ended with status {status}: {status_resp}")
+
+        self.cancel_ariel_search(search_id)
+        raise QRadarAPIError(
+            f"Ariel search {search_id} did not complete within "
+            f"{max_poll_attempts * poll_interval:.0f}s and was canceled."
+        )

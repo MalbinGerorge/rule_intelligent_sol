@@ -23,16 +23,20 @@ own confirmed parameter layout or text-extraction quirk:
     SequenceFunction_Test, DoubleSequenceFunction_Test,
     CauseAndEffect_Test, TriggerMatchCount, AQL_Test, DeviceTypeID_Test,
     DeviceID_Test, EventCategory_Test, QID_Test, ReferenceSetTest,
-    ReferenceDataTest -- see each extractor's own docstring for details.
+    ReferenceDataTest, RuleMatch_Test -- see each extractor's own
+    docstring for details.
 
 NOT handled here (separate pipeline):
-  - BB/rule references (RuleMatch_Test, threshold/sequence BB refs) ->
-    already extracted by rule_xml_parser.extract_bb_references into
-    rule_building_blocks. Skipped here to avoid duplicating that data
-    under a different shape.
+  - Full BB/rule reference structural extraction (creating the actual
+    REFERENCES graph edge) -> owned by
+    rule_xml_parser.extract_bb_references into rule_building_blocks.
+    RuleMatch_Test IS still parsed here too, but only lightly (which
+    BB(s) it names, for display/sequence purposes) -- see
+    extract_rule_match_condition. The two code paths are independent
+    and don't duplicate each other's actual job.
 
 ALL 60 confirmed real-data test classes are now covered, either via
-this general algorithm or one of the 14 special-cased extractors above.
+this general algorithm or one of the 15 special-cased extractors above.
 """
 from __future__ import annotations
 
@@ -40,15 +44,14 @@ import html
 import re
 import xml.etree.ElementTree as ET
 
-# test classes whose BB/rule references are already handled by
-# rule_xml_parser.extract_bb_references — skip them here entirely so we
-# don't produce a second, differently-shaped representation of the same data.
-# NOTE: ThresholdFunction_Test moved OUT of this set — it has its own
-# confirmed parameter layout (see extract_threshold_condition) and is
-# handled specially below, same pattern as ArielFilterTest.
-_BB_REFERENCE_TEST_CLASSES = {
-    "RuleMatch_Test",
-}
+# Historically held test classes whose BB/rule references are handled
+# by rule_xml_parser.extract_bb_references — kept as an empty set now
+# (not deleted) for backward compat / clarity. RuleMatch_Test moved
+# OUT (see extract_rule_match_condition) so its sequence_order is
+# preserved for chain-reconstruction purposes -- rule_building_blocks
+# population is a SEPARATE code path (rule_xml_parser.extract_bb_references),
+# entirely unaffected by this change.
+_BB_REFERENCE_TEST_CLASSES: set[str] = set()
 
 # Ariel filter operator codes, decoded from comparing real <text> against
 # real <userSelection> (e.g. "CONALL" = "contains all of"). Extend this
@@ -142,6 +145,10 @@ _REFMAP_TEXT_PATTERN = re.compile(
     r"^when (any|all) of (.+?) is the key and (any|all) of (.+?) is the value in (any|all) of\s+(.+)$"
 )
 
+_BB_ID_LIKE_PATTERN = re.compile(
+    r"^(SYSTEM-\d+|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$",
+    re.IGNORECASE,
+)
 
 def _test_short_name(test_el: ET.Element) -> str:
     return test_el.get("name", "UNKNOWN").rsplit(".", 1)[-1]
@@ -663,6 +670,46 @@ def extract_refmap_condition(test_el: ET.Element) -> dict | None:
     }
 
 
+def extract_rule_match_condition(test_el: ET.Element) -> dict | None:
+    """RuleMatch_Test-specific: a plain "AND when matches BB:X" check,
+    no threshold. Full structural extraction (creating the actual
+    REFERENCES edge) is owned by rule_xml_parser.extract_bb_references
+    -- a separate, unrelated code path, untouched by this. This
+    extractor's ONLY job is capturing which BB(s) are referenced, for
+    display purposes, so this condition's position in the rule's real
+    execution sequence isn't silently lost.
+
+    CONFIRMED BUG FIX: an earlier version assumed the BB identifier(s)
+    always live in parameter id="1". True for the simple "AND when
+    matches BB:X" sentence shape, but FALSE for the "matches any/all
+    of the following BB(s):" shape -- there, parameter id="1" is the
+    match-mode QUANTIFIER ("any"/"all"), not a BB id at all, and the
+    real BB identifier lives in parameter id="2" instead. The old code
+    silently stored "any" as if it were a real bb_id, breaking
+    downstream BB lookup for every rule using this sentence shape
+    (confirmed on real data: "Bypass UAC via Fodhelper.exe", BB:
+    Process Creation, identifier 44f094bf-d53e-4102-b89e-39a0fc3692eb).
+
+    Fixed by NEVER trusting a fixed parameter position: inspect EVERY
+    parameter's values, keep only ones that actually LOOK LIKE a real
+    identifier (SYSTEM-nnnn or a UUID) -- explicitly excludes known
+    quantifier words ("any", "all"). Robust to both sentence shapes at
+    once, without needing to special-case each one separately.
+    """
+    candidate_ids: list[str] = []
+    for param_el in test_el.findall("parameter"):
+        sel = param_el.find("userSelection")
+        if sel is None or not sel.text:
+            continue
+        for value in (v.strip() for v in sel.text.split(",")):
+            if value and _BB_ID_LIKE_PATTERN.match(value):
+                candidate_ids.append(value)
+
+    if not candidate_ids:
+        return None
+    return {"bb_ids": candidate_ids}
+
+
 def parse_rule_conditions(rule_xml: str | None) -> list[dict]:
     """
     Returns one dict per <test> element (excluding BB-reference tests,
@@ -755,6 +802,10 @@ def parse_rule_conditions(rule_xml: str | None) -> list[dict]:
             refmap = extract_refmap_condition(test_el)
             if refmap:
                 entry["refmap"] = refmap
+        elif short_name == "RuleMatch_Test":
+            rule_match = extract_rule_match_condition(test_el)
+            if rule_match:
+                entry["rule_match"] = rule_match
 
         for param_el in test_el.findall("parameter"):
             values = _decode_parameter(param_el)

@@ -41,6 +41,20 @@ class Settings(BaseSettings):
     neo4j_username: str = "neo4j"
     neo4j_password: str = "Sillywilly79**"
 
+    # Azure OpenAI — used by the AI/agentic layer (natural language ->
+    # Cypher). Never hardcode these; always via .env. deployment_name
+    # is the Azure DEPLOYMENT name you configured, not necessarily the
+    # literal model name.
+    azure_openai_endpoint: str = ""
+    azure_openai_api_key: str = ""
+    azure_openai_deployment: str = ""
+    azure_openai_api_version: str = ""
+
+    azure_openai_endpoint_4o: str = ""
+    azure_openai_api_key_4o: str = ""
+    azure_openai_deployment_4o: str = ""
+    azure_openai_api_version_4o: str = ""
+    redis_url: str = "redis://localhost:6379/0"
     @computed_field
     @property
     def pg_dsn(self) -> str:

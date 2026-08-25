@@ -91,9 +91,17 @@ def _load_rule_nodes(driver: Driver, db: Session, customer_id: int) -> int:
     rows = db.execute(
         text(
             """
-            SELECT id AS rule_id, customer_id, qradar_rule_id, identifier, name,
-                   object_type, type, enabled, owner, origin
-            FROM rules WHERE customer_id = :c
+            SELECT r.id AS rule_id, r.customer_id, r.qradar_rule_id, r.identifier, r.name,
+                   r.object_type, r.type, r.enabled, r.owner, r.origin, r.created_at, r.updated_at,
+                   resp.force_offense_creation, resp.offense_mapping, resp.severity,
+                   resp.credibility, resp.relevance, resp.qid AS dispatch_qid,
+                   resp.low_level_category, resp.event_name AS dispatch_event_name,
+                   resp.describe_offense, resp.override_offense_name, resp.contribute_offense_name,
+                   resp.limiter_response_count, resp.limiter_interval_count,
+                   resp.limiter_interval_type, resp.limiter_host_type
+            FROM rules r
+            LEFT JOIN rule_responses resp ON resp.rule_id = r.id
+            WHERE r.customer_id = :c
             """
         ),
         {"c": customer_id},
@@ -112,7 +120,24 @@ def _load_rule_nodes(driver: Driver, db: Session, customer_id: int) -> int:
                 r.type = row.type,
                 r.enabled = row.enabled,
                 r.owner = row.owner,
-                r.origin = row.origin
+                r.origin = row.origin,
+                r.created_at = row.created_at,
+                r.updated_at = row.updated_at,
+                r.force_offense_creation = row.force_offense_creation,
+                r.offense_mapping = row.offense_mapping,
+                r.dispatch_severity = row.severity,
+                r.dispatch_credibility = row.credibility,
+                r.dispatch_relevance = row.relevance,
+                r.dispatch_qid = row.dispatch_qid,
+                r.dispatch_low_level_category = row.low_level_category,
+                r.dispatch_event_name = row.dispatch_event_name,
+                r.describe_offense = row.describe_offense,
+                r.override_offense_name = row.override_offense_name,
+                r.contribute_offense_name = row.contribute_offense_name,
+                r.limiter_response_count = row.limiter_response_count,
+                r.limiter_interval_count = row.limiter_interval_count,
+                r.limiter_interval_type = row.limiter_interval_type,
+                r.limiter_host_type = row.limiter_host_type
             WITH r, row
             FOREACH (_ IN CASE WHEN row.object_type = 'BUILDING_BLOCK' THEN [1] ELSE [] END |
                 SET r:BuildingBlock
@@ -203,7 +228,7 @@ def _load_condition_nodes(driver: Driver, db: Session, customer_id: int) -> int:
             WHERE r.customer_id = :c
               AND rc.test_class NOT IN (
                   'ThresholdFunction_Test', 'DeviceTypeID_Test', 'DeviceID_Test',
-                  'SequenceFunction_Test', 'DoubleSequenceFunction_Test','QID_Test',
+                  'SequenceFunction_Test', 'DoubleSequenceFunction_Test','QID_Test','RuleMatch_Test',
                   'CauseAndEffect_Test', 'TriggerMatchCount','EventCategory_Test','ReferenceSetTest','ReferenceDataTest'
               )
             """
@@ -656,6 +681,51 @@ def _load_refmap_edges(driver: Driver, db: Session, customer_id: int) -> int:
 
 
 
+def _load_reference_write_edges(driver: Driver, db: Session, customer_id: int) -> int:
+    """
+    (:Rule)-[:WRITES_TO_REFDATA]->(:ReferenceData) -- the OPPOSITE
+    direction from DEPENDS_ON_REFSET/DEPENDS_ON_REFMAP (which mean
+    "reads from"). Confirmed rare from real data (4 of 1152 rules) but
+    real -- a rule populating a reference set/map/table as a side
+    effect for OTHER rules to later read from.
+
+    Single node label (ReferenceData) covering map/mapOfSets/
+    mapOfMaps/table uniformly, with write_type as an edge property --
+    deliberately not 4 separate node types, since real data so far
+    only confirms ONE sub-type (referenceMapOfSets); inventing
+    speculative node types for sub-types never actually observed would
+    be guessing, not building from confirmed data.
+    """
+    rows = db.execute(
+        text(
+            """
+            SELECT resp.rule_id, r.customer_id, resp.ref_write_target_name,
+                   resp.ref_write_key_field, resp.ref_write_filter, resp.ref_write_type
+            FROM rule_responses resp
+            JOIN rules r ON r.id = resp.rule_id
+            WHERE r.customer_id = :c AND resp.ref_write_target_name IS NOT NULL
+            """
+        ),
+        {"c": customer_id},
+    ).mappings().all()
+
+    with driver.session() as session:
+        session.run(
+            """
+            UNWIND $rows AS row
+            MATCH (r:Rule {rule_id: row.rule_id})
+            MERGE (rd:ReferenceData {name: row.ref_write_target_name})
+            MERGE (r)-[rel:WRITES_TO_REFDATA]->(rd)
+            SET rel.key_field = row.ref_write_key_field,
+                rel.filter = row.ref_write_filter,
+                rel.write_type = row.ref_write_type
+            """,
+            rows=[dict(r) for r in rows],
+        )
+    return len(rows)
+
+
+
 def _load_mitre_edges(driver: Driver, db: Session, customer_id: int) -> int:
     rows = db.execute(
         text(
@@ -705,6 +775,8 @@ def build_customer_graph(driver: Driver, db: Session, customer_id: int) -> dict:
     refmap_count = _load_refmap_edges(driver, db, customer_id)
     followed_by_count = _load_followed_by_edges(driver, db, customer_id)
     mitre_count = _load_mitre_edges(driver, db, customer_id)
+    refwrite_count = _load_reference_write_edges(driver, db, customer_id)
+
 
     return {
         "rule_nodes": rule_count,
@@ -718,4 +790,5 @@ def build_customer_graph(driver: Driver, db: Session, customer_id: int) -> dict:
         "refmap_edges": refmap_count,
         "followed_by_edges": followed_by_count,
         "mitre_edges": mitre_count,
+        "refwrite_edges": refwrite_count,
     }

@@ -22,6 +22,48 @@ services:
       timeout: 5s
       retries: 10
 
+  postgres:
+    image: pgvector/pgvector:pg16   # was: postgres:16
+    container_name: rule_intelligent_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Sillywilly79**
+      POSTGRES_DB: rule_intelligent_sol
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer
+    container_name: rule_intelligent_adminer
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    depends_on:
+      - postgres
+
+  redis:
+    image: redis:7-alpine
+    container_name: rule_intelligent_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: rule_intelligent_redis_ui
+    restart: unless-stopped
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8082:8081"
+
 volumes:
   neo4j_data:
   neo4j_logs:
+  postgres_data:
+  redis_data:
