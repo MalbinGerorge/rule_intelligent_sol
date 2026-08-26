@@ -43,7 +43,7 @@ celery_app = Celery(
     # @celery_app.task somewhere else isn't enough on its own; the
     # worker needs to be explicitly told which module(s) to import so
     # it actually discovers and registers the tasks defined there.
-    include=["app.services.investigation_runner"],
+    include=["app.services.investigation_runner", "app.recommendations.sigma_batch_runner"],
 )
 
 celery_app.conf.update(

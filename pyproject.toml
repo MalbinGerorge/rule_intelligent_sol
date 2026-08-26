@@ -19,6 +19,7 @@ dependencies = [
     "celery[redis]>=5.4.0",
     "pgvector>=0.3.0",
     "langsmith>=0.10.18",
+    "flower>=2.1.0",
 ]
 
 [dependency-groups]
