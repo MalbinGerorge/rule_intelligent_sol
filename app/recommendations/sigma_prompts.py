@@ -36,6 +36,7 @@ CONFIRMED REAL BUG this rule fixes: an earlier version of this system incorrectl
   WRONG:   values: ["<browser_app_dir_fragment_1>", "<browser_app_dir_fragment_2>", "<browser_app_dir_fragment_3>"]
 
 The ONLY things to abstract are values UNIQUE TO THIS SPECIFIC CUSTOMER'S ENVIRONMENT that would reveal real, private information if shared -- e.g. an actual employee's username, an actual internal server hostname, an actual internal domain name, or actual IP addresses from a customer's reference set. A list of well-known software names is never one of these."""
+
 _FIELD_VALUES = """CRITICAL - FIELD VALUES: values must be the actual literal value the field is compared against (e.g. a numeric QID like "101250969"), never a human-readable NAME or label for that value. If you want to record a human-readable name alongside a code, use a separate field for it."""
 
 _LOGSOURCE = """CRITICAL - LOGSOURCE MUST BE POPULATED: whenever the rule chain shows a real log source/device type, you MUST reflect it in the logsource's product (and service if applicable) -- never leave both null when a log source is clearly present, even though the same info may also appear as a DeviceVendor/DeviceProduct field inside detection selections. CONFIRMED real Sigma product naming (from actual SigmaHQ rules) is lowercase, e.g.:

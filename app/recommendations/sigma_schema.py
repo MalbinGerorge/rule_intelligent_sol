@@ -19,8 +19,6 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
-# -- Shared building blocks, used by BOTH schemas below --------------
-
 class SigmaLogsource(BaseModel):
     category: str | None = Field(None, description="e.g. 'process_creation', 'firewall', 'authentication'")
     product: str | None = Field(None, description="e.g. 'windows', 'linux', 'fortigate'")

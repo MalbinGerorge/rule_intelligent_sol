@@ -1,13 +1,10 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { fetchAllRules } from '$lib/api/rules';
 	import { startInvestigation, getInvestigation, listInvestigations } from '$lib/api/rule_analyzer';
 	import { ApiError } from '$lib/api/client';
 	import type { Rule } from '$lib/types/rule';
 	import type { InvestigationDetail, InvestigationListItem } from '$lib/api/rule_analyzer';
-
-	// TODO: replace with a real customer selector once there's more than one
-	const CUSTOMER_ID = 1;
+	import { selectedCustomerId } from '$lib/stores/customer';
 
 	// -- Rule picker state --
 	let searchText = $state('');
@@ -18,30 +15,12 @@
 	let selectedRuleName = $state<string>('');
 
 	const filteredRules = $derived(
-        searchText.trim() === ''
-            ? []
-            : allRules
-                    .filter((r) => (r.name ?? '').toLowerCase().includes(searchText.trim().toLowerCase()))
-                    .slice(0, 20)
-    );
-
-	onMount(async () => {
-		try {
-			allRules  = await fetchAllRules(CUSTOMER_ID);
-		} catch (e) {
-			rulesError = e instanceof ApiError ? e.message : 'Failed to load rules';
-		} finally {
-			rulesLoading = false;
-		}
-	});
-
-	function selectRule(rule: Rule) {
-		selectedRuleId = rule.id;
-		selectedRuleName = rule.name ?? `Rule #${rule.id}`;
-		searchText = '';
-		current = null;
-		loadHistory();
-	}
+		searchText.trim() === ''
+			? []
+			: allRules
+					.filter((r) => (r.name ?? '').toLowerCase().includes(searchText.trim().toLowerCase()))
+					.slice(0, 20)
+	);
 
 	// -- Investigation state --
 	let current = $state<InvestigationDetail | null>(null);
@@ -53,6 +32,48 @@
 	const HISTORY_PAGE_SIZE = 20;
 	let showTrace = $state(false);
 	let pollTimer: ReturnType<typeof setTimeout> | null = null;
+
+	// Runs on initial mount AND every time the selected customer changes
+	// (replaces the old onMount -- $effect covers both cases in one
+	// place). Resets ALL rule-scoped state first -- a selected rule or
+	// in-progress investigation belongs to the PREVIOUS customer and
+	// must not linger on screen after switching -- then loads the new
+	// customer's rule list.
+	$effect(() => {
+		const customerId = $selectedCustomerId;
+		if (customerId === null) return;
+
+		selectedRuleId = null;
+		selectedRuleName = '';
+		searchText = '';
+		current = null;
+		history = [];
+		historyTotal = 0;
+		investigationError = null;
+		if (pollTimer) clearInterval(pollTimer);
+		polling = false;
+
+		rulesLoading = true;
+		rulesError = null;
+		fetchAllRules(customerId)
+			.then((rules) => {
+				allRules = rules;
+			})
+			.catch((e) => {
+				rulesError = e instanceof ApiError ? e.message : 'Failed to load rules';
+			})
+			.finally(() => {
+				rulesLoading = false;
+			});
+	});
+
+	function selectRule(rule: Rule) {
+		selectedRuleId = rule.id;
+		selectedRuleName = rule.name ?? `Rule #${rule.id}`;
+		searchText = '';
+		current = null;
+		loadHistory();
+	}
 
 	async function loadHistory() {
 		if (selectedRuleId === null) return;
@@ -67,7 +88,7 @@
 	}
 
 	async function runInvestigation() {
-		if (selectedRuleId === null) return;
+		if (selectedRuleId === null || $selectedCustomerId === null) return;
 		investigationError = null;
 		showTrace = false;
 		try {
@@ -75,7 +96,7 @@
 			current = {
 				...created,
 				rule_id: selectedRuleId,
-				customer_id: CUSTOMER_ID,
+				customer_id: $selectedCustomerId,
 				error: null,
 				chain_analysis: null,
 				final_report: null,
@@ -145,17 +166,16 @@
 			</ul>
 		{/if}
 
-<div class="selected-rule-row">
-    <span class="selected-rule-name">
-        {selectedRuleId !== null ? `Selected: ${selectedRuleName}` : 'No rule selected'}
-    </span>
-    <button class="run-button" onclick={runInvestigation} disabled={polling || selectedRuleId === null}>
-        {polling ? 'Investigating…' : 'Run Investigation'}
-    </button>
-</div>
+		<div class="selected-rule-row">
+			<span class="selected-rule-name">
+				{selectedRuleId !== null ? `Selected: ${selectedRuleName}` : 'No rule selected'}
+			</span>
+			<button class="run-button" onclick={runInvestigation} disabled={polling || selectedRuleId === null}>
+				{polling ? 'Investigating…' : 'Run Investigation'}
+			</button>
+		</div>
 	{/if}
 </div>
-
 
 {#if investigationError}
 	<div class="empty-state error">{investigationError}</div>

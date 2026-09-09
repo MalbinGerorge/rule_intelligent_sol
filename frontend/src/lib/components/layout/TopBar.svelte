@@ -1,11 +1,47 @@
 <script lang="ts">
-	let { customerName = 'Cotecna' }: { customerName?: string } = $props();
+	import { onMount } from 'svelte';
+	import { fetchCustomers, type Customer } from '$lib/api/customers';
+	import { selectedCustomerId } from '$lib/stores/customer';
+	import { ApiError } from '$lib/api/client';
+
+	let customers = $state<Customer[]>([]);
+	let loading = $state(true);
+	let error = $state<string | null>(null);
+
+	onMount(async () => {
+		try {
+			const resp = await fetchCustomers();
+			customers = resp.customers;
+			if ($selectedCustomerId === null && customers.length > 0) {
+				selectedCustomerId.set(customers[0].id);
+			}
+		} catch (e) {
+			error = e instanceof ApiError ? e.message : 'Failed to load customers';
+		} finally {
+			loading = false;
+		}
+	});
+
+	function handleChange(event: Event) {
+		const id = Number((event.target as HTMLSelectElement).value);
+		selectedCustomerId.set(id);
+	}
 </script>
 
 <header class="topbar">
 	<div class="context">
 		<span class="context-label">Customer</span>
-		<span class="context-value">{customerName}</span>
+		{#if loading}
+			<span class="context-value muted">Loading…</span>
+		{:else if error}
+			<span class="context-value error-text">{error}</span>
+		{:else}
+			<select class="context-select" value={$selectedCustomerId} onchange={handleChange}>
+				{#each customers as customer (customer.id)}
+					<option value={customer.id}>{customer.name}</option>
+				{/each}
+			</select>
+		{/if}
 	</div>
 
 	<div class="user">
@@ -43,6 +79,39 @@
 	.context-value {
 		font-size: 0.9rem;
 		font-weight: 600;
+	}
+
+	.context-value.muted {
+		color: var(--text-muted);
+		font-weight: 400;
+	}
+
+	.context-value.error-text {
+		color: var(--warning);
+		font-weight: 400;
+	}
+
+	.context-select {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: var(--text);
+		background: transparent;
+		border: none;
+		border-bottom: 1px dashed var(--border);
+		padding: 0 0.2rem 0.1rem;
+		cursor: pointer;
+	}
+
+	.context-select:hover,
+	.context-select:focus {
+		border-bottom-color: var(--accent);
+		outline: none;
+	}
+
+	.context-select option {
+		background: var(--bg);
+		color: var(--text);
+		font-weight: 400;
 	}
 
 	.user {

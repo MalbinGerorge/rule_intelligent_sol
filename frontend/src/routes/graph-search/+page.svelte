@@ -3,9 +3,7 @@
 	import { ApiError } from '$lib/api/client';
 	import type { FieldSearchResult, BuildingBlockDependent } from '$lib/types/graph';
 	import { Search, GitBranch } from 'lucide-svelte';
-
-	// TODO: replace with a real customer selector once there's more than one
-	const CUSTOMER_ID = 1;
+	import { selectedCustomerId } from '$lib/stores/customer';
 
 	let mode = $state<'field' | 'dependents'>('dependents');
 	let query = $state('');
@@ -22,9 +20,9 @@
 		searched = true;
 		try {
 			if (mode === 'field') {
-				fieldResults = await searchByField(query.trim(), CUSTOMER_ID);
+				fieldResults = await searchByField(query.trim(), $selectedCustomerId);
 			} else {
-				dependentResults = await fetchBbDependents(query.trim(), CUSTOMER_ID);
+				dependentResults = await fetchBbDependents(query.trim(), $selectedCustomerId);
 			}
 		} catch (e) {
 			error = e instanceof ApiError ? e.message : 'Search failed';

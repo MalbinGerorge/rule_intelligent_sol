@@ -91,17 +91,24 @@ def _load_rule_nodes(driver: Driver, db: Session, customer_id: int) -> int:
     rows = db.execute(
         text(
             """
-            SELECT r.id AS rule_id, r.customer_id, r.qradar_rule_id, r.identifier, r.name,
-                   r.object_type, r.type, r.enabled, r.owner, r.origin, r.created_at, r.updated_at,
-                   resp.force_offense_creation, resp.offense_mapping, resp.severity,
-                   resp.credibility, resp.relevance, resp.qid AS dispatch_qid,
-                   resp.low_level_category, resp.event_name AS dispatch_event_name,
-                   resp.describe_offense, resp.override_offense_name, resp.contribute_offense_name,
-                   resp.limiter_response_count, resp.limiter_interval_count,
-                   resp.limiter_interval_type, resp.limiter_host_type
-            FROM rules r
-            LEFT JOIN rule_responses resp ON resp.rule_id = r.id
-            WHERE r.customer_id = :c
+            SELECT rs.id AS rule_id, rs.customer_id, rs.qradar_rule_id, rs.identifier, rs.name,
+                rs.object_type, rs.type, rs.enabled, rs.owner, rs.origin, rs.created_at, rs.updated_at,
+                resp.force_offense_creation, resp.offense_mapping, resp.severity,
+                resp.credibility, resp.relevance, resp.qid AS dispatch_qid,
+                resp.low_level_category, resp.event_name AS dispatch_event_name,
+                resp.describe_offense, resp.override_offense_name, resp.contribute_offense_name,
+                resp.limiter_response_count, resp.limiter_interval_count,
+                resp.limiter_interval_type, resp.limiter_host_type,
+                (rs.linked_rule_identifier IS NOT NULL AND rs.origin <> 'OVERRIDE'
+                    AND EXISTS (
+                        SELECT 1 FROM rule_summary rs2
+                        WHERE rs2.customer_id = rs.customer_id
+                        AND rs2.identifier = rs.linked_rule_identifier
+                        AND rs2.origin = 'OVERRIDE'
+                    )) AS is_superseded
+            FROM rule_summary rs
+            LEFT JOIN rule_responses resp ON resp.rule_id = rs.id
+            WHERE rs.customer_id = :c
             """
         ),
         {"c": customer_id},
@@ -119,6 +126,7 @@ def _load_rule_nodes(driver: Driver, db: Session, customer_id: int) -> int:
                 r.object_type = row.object_type,
                 r.type = row.type,
                 r.enabled = row.enabled,
+                r.is_superseded = row.is_superseded,
                 r.owner = row.owner,
                 r.origin = row.origin,
                 r.created_at = row.created_at,
@@ -228,7 +236,7 @@ def _load_condition_nodes(driver: Driver, db: Session, customer_id: int) -> int:
             WHERE r.customer_id = :c
               AND rc.test_class NOT IN (
                   'ThresholdFunction_Test', 'DeviceTypeID_Test', 'DeviceID_Test',
-                  'SequenceFunction_Test', 'DoubleSequenceFunction_Test','QID_Test','RuleMatch_Test',
+                  'SequenceFunction_Test', 'DoubleSequenceFunction_Test','QID_Test','RuleMatch_Test','MatchCount',
                   'CauseAndEffect_Test', 'TriggerMatchCount','EventCategory_Test','ReferenceSetTest','ReferenceDataTest'
               )
             """
@@ -758,6 +766,42 @@ def _load_mitre_edges(driver: Driver, db: Session, customer_id: int) -> int:
         )
     return len(rows)
 
+def _load_match_count_properties(driver: Driver, db: Session, customer_id: int) -> int:
+    """MatchCount's self-referential threshold data lives as properties
+    directly on the Rule node -- it references no second entity, unlike
+    ThresholdFunction_Test/TriggerMatchCount, which attach to edges."""
+    rows = db.execute(
+        text(
+            """
+            SELECT rc.rule_id, rc.structured_data
+            FROM rule_conditions rc
+            JOIN rules r ON r.id = rc.rule_id
+            WHERE r.customer_id = :c AND rc.test_class = 'MatchCount'
+            """
+        ),
+        {"c": customer_id},
+    ).mappings().all()
+
+    prepared = []
+    for r in rows:
+        mc = r["structured_data"].get("match_count")
+        if mc:
+            prepared.append({"rule_id": r["rule_id"], **mc})
+
+    with driver.session() as session:
+        session.run(
+            """
+            UNWIND $rows AS row
+            MATCH (r:Rule {rule_id: row.rule_id})
+            SET r.match_count_count = row.count,
+                r.match_count_same_field = row.same_field,
+                r.match_count_different_field = row.different_field,
+                r.match_count_time_value = row.time_value,
+                r.match_count_time_unit = row.time_unit
+            """,
+            rows=prepared,
+        )
+    return len(prepared)
 
 def build_customer_graph(driver: Driver, db: Session, customer_id: int) -> dict:
     """Full rebuild: clear this customer's graph, then reload everything
@@ -776,6 +820,7 @@ def build_customer_graph(driver: Driver, db: Session, customer_id: int) -> dict:
     followed_by_count = _load_followed_by_edges(driver, db, customer_id)
     mitre_count = _load_mitre_edges(driver, db, customer_id)
     refwrite_count = _load_reference_write_edges(driver, db, customer_id)
+    match_count_count = _load_match_count_properties(driver, db, customer_id)
 
 
     return {

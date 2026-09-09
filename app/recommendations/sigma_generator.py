@@ -18,19 +18,13 @@ from app.rule_analyzer.llm_provider import LLMProvider
 from app.rule_analyzer.rule_chain_context import format_full_chain_inline
 
 THRESHOLD_TEST_CLASSES = {
-    "ThresholdFunction_Test",
-    "TriggerMatchCount",
-    "MatchCount",
-    "SequenceFunction_Test",
-    "DoubleSequenceFunction_Test",
-    "CauseAndEffect_Test",
-    "TriggerTimeout",
+    "ThresholdFunction_Test", "TriggerMatchCount", "MatchCount",
+    "SequenceFunction_Test", "DoubleSequenceFunction_Test",
+    "CauseAndEffect_Test", "TriggerTimeout",
 }
 
 
 def _detection_to_sigma_dict(detection: SigmaDetection) -> dict:
-    """Converts the LLM-safe list-based SigmaDetection into real
-    Sigma-shaped dict format -- {selection_name: {field[|modifier]: value}}."""
     selections = {}
     for sel in detection.selections:
         field_dict = {}
@@ -64,9 +58,14 @@ class SigmaGenerator:
         )
 
     def generate_and_save(self, db: Session, customer_id: int, rule_id: int) -> dict:
-        """The ONE entry point. Returns {"role": "standalone"|"correlation",
-        "ids": [id] or [base_id, correlation_id], "generation": <the raw
-        Pydantic object, for trace/inspection purposes>}."""
+        """The ONE entry point. DELETE-then-INSERT for existing
+        representations happens INSIDE the two _save_* methods below,
+        in the SAME transaction as the new insert -- deliberately NOT
+        deleted here, before the LLM call: if the LLM call fails, this
+        function raises before ever reaching the save step, so the
+        OLD representation is left completely untouched -- never a
+        window where a rule has zero rows because a regeneration
+        attempt failed partway through."""
         chain_text = format_full_chain_inline(db, customer_id, rule_id)
         if chain_text is None:
             raise ValueError(f"Rule {rule_id} not found for customer {customer_id}")
@@ -90,7 +89,21 @@ class SigmaGenerator:
         new_id = self._save_standalone(db, customer_id, rule_id, generation)
         return {"role": "standalone", "ids": [new_id], "generation": generation}
 
+    def _delete_existing(self, db: Session, customer_id: int, rule_id: int) -> None:
+        """Removes ANY existing representation(s) for this rule (both
+        standalone and base+correlation pairs) before inserting the
+        fresh one -- CONFIRMED NECESSARY: without this, regenerating an
+        already-processed rule (whether because it went stale, or an
+        explicit re-test via rule_names) silently accumulates duplicate
+        rows over time, since every save was a plain INSERT with
+        nothing ever cleaning up the prior version."""
+        db.execute(
+            text("DELETE FROM rule_yaml_representations WHERE rule_id = :rule_id AND customer_id = :customer_id"),
+            {"rule_id": rule_id, "customer_id": customer_id},
+        )
+
     def _save_standalone(self, db: Session, customer_id: int, rule_id: int, generation: SigmaRuleGeneration) -> int:
+        self._delete_existing(db, customer_id, rule_id)
         sigma_id = str(uuid.uuid4())
         row = db.execute(
             text(
@@ -127,6 +140,7 @@ class SigmaGenerator:
     def _save_correlation(
         self, db: Session, customer_id: int, rule_id: int, generation: SigmaCorrelationGeneration
     ) -> tuple[int, int]:
+        self._delete_existing(db, customer_id, rule_id)
         base_sigma_id = str(uuid.uuid4())
         base_row = db.execute(
             text(

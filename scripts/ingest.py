@@ -28,8 +28,8 @@ from app.services.qradar_client import QRadarClient, QRadarAPIError
 from app.services.rule_ingest import upsert_rules, upsert_rules_reference, upsert_building_blocks_reference
 from app.services.offense_contribution_ingest import upsert_offense_contributions
 from app.services.mitre_mapping_ingest import upsert_mitre_mappings
-
-
+from app.services.log_source_type_ingest import upsert_log_source_types_reference
+from app.services.log_source_ingest import upsert_log_sources_reference
 def load_customer(name: str) -> dict:
     with engine.connect() as conn:
         row = conn.execute(
@@ -118,6 +118,34 @@ def main() -> None:
     except QRadarAPIError as e:
         record_sync_run(engine, customer_id, "building_blocks", "error", 0, str(e), started_at=started)
         print(f"[FAIL] building_blocks: {e} — continuing, this only affects validation")
+
+
+    # -- log_source_types -> log_source_types_reference ----------------------
+    started = datetime.now(timezone.utc)
+    try:
+        pages = client.fetch_log_source_types()
+        with engine.begin() as session:
+            n = upsert_log_source_types_reference(session, customer_id, pages)
+        record_sync_run(engine, customer_id, "log_source_types", "success", n, started_at=started)
+        print(f"[OK] log_source_types -> log_source_types_reference: {n} upserted")
+    except QRadarAPIError as e:
+        record_sync_run(engine, customer_id, "log_source_types", "error", 0, str(e), started_at=started)
+        print(f"[FAIL] log_source_types: {e} — continuing, this only affects log-source-gap analysis")
+
+
+
+    # -- log_sources -> log_sources_reference (the REAL "onboarded" signal) --
+    started = datetime.now(timezone.utc)
+    try:
+        pages = client.fetch_log_sources()
+        with engine.begin() as session:
+            n = upsert_log_sources_reference(session, customer_id, pages)
+        record_sync_run(engine, customer_id, "log_sources", "success", n, started_at=started)
+        print(f"[OK] log_sources -> log_sources_reference: {n} upserted")
+    except QRadarAPIError as e:
+        record_sync_run(engine, customer_id, "log_sources", "error", 0, str(e), started_at=started)
+        print(f"[FAIL] log_sources: {e} — continuing, this only affects log-source-gap analysis")
+
 
     # -- rules_offense_contributions ----------------------------------------
     started = datetime.now(timezone.utc)

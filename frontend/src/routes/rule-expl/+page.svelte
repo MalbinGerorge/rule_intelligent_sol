@@ -3,13 +3,22 @@
 	import { ApiError } from '$lib/api/client';
 	import type { ChatTurn } from '$lib/types/agent';
 	import { Send, HelpCircle, ShieldAlert, Ban, AlertTriangle } from 'lucide-svelte';
-
-	// TODO: replace with a real customer selector once there's more than one
-	const CUSTOMER_ID = 1;
+	import { selectedCustomerId } from '$lib/stores/customer';
 
 	let turns = $state<ChatTurn[]>([]);
 	let input = $state('');
 	let loading = $state(false);
+	let lastCustomerId = $selectedCustomerId;
+
+	// Clears the chat when the customer switches -- old answers were
+	// about a DIFFERENT customer's rules and would otherwise sit,
+	// unlabeled, alongside new answers about the newly selected one.
+	$effect(() => {
+		if ($selectedCustomerId !== lastCustomerId) {
+			turns = [];
+			lastCustomerId = $selectedCustomerId;
+		}
+	});
 
 	function rowColumns(rows: Record<string, unknown>[]): string[] {
 		return rows.length > 0 ? Object.keys(rows[0]) : [];
@@ -23,14 +32,14 @@
 
 	async function submit() {
 		const question = input.trim();
-		if (!question || loading) return;
+		if (!question || loading || $selectedCustomerId === null) return;
 
 		turns.push({ role: 'user', text: question });
 		input = '';
 		loading = true;
 
 		try {
-			const response = await askAgent(question, CUSTOMER_ID);
+			const response = await askAgent(question, $selectedCustomerId);
 			turns.push({ role: 'assistant', text: '', response });
 		} catch (e) {
 			const message = e instanceof ApiError ? e.message : 'Request failed — is the backend running?';

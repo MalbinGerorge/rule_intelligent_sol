@@ -1,25 +1,33 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { fetchHealthMetrics } from '$lib/api/rules';
 	import { ApiError } from '$lib/api/client';
 	import type { RuleHealthMetrics } from '$lib/types/rule';
 	import MetricCard from '$lib/components/dashboard/MetricCard.svelte';
+	import { selectedCustomerId } from '$lib/stores/customer';
 
 	let metrics = $state<RuleHealthMetrics | null>(null);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 
-	// TODO: replace with a real customer selector once there's more than one
-	const CUSTOMER_ID = 1;
+	// Runs on initial mount AND whenever the selected customer changes
+	// -- replaces onMount, so switching customers correctly refetches
+	// instead of leaving the previous customer's metrics on screen.
+	$effect(() => {
+		const customerId = $selectedCustomerId;
+		if (customerId === null) return;
 
-	onMount(async () => {
-		try {
-			metrics = await fetchHealthMetrics(CUSTOMER_ID);
-		} catch (e) {
-			error = e instanceof ApiError ? e.message : 'Failed to load metrics';
-		} finally {
-			loading = false;
-		}
+		loading = true;
+		error = null;
+		fetchHealthMetrics(customerId)
+			.then((m) => {
+				metrics = m;
+			})
+			.catch((e) => {
+				error = e instanceof ApiError ? e.message : 'Failed to load metrics';
+			})
+			.finally(() => {
+				loading = false;
+			});
 	});
 </script>
 

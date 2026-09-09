@@ -1,8 +1,6 @@
 """Response/request schemas for the Sigma generation batch API."""
 from __future__ import annotations
 
-from datetime import datetime
-
 from pydantic import BaseModel, Field
 
 
@@ -12,7 +10,6 @@ class SigmaGenerationRequest(BaseModel):
         description="Specific rule names to generate for. Omit or leave null to generate for ALL canonical rules.",
         examples=[None],
     )
-
 
 
 class SigmaGenerationJobCreateResponse(BaseModel):
@@ -31,5 +28,5 @@ class SigmaGenerationJobDetail(BaseModel):
     failed_rules: int
     failed_rule_details: list[dict] | None = None
     error: str | None = None
-    created_at: datetime
-    finished_at: datetime | None = None
+    created_at: str
+    finished_at: str | None = None

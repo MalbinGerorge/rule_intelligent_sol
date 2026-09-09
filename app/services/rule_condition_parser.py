@@ -709,6 +709,56 @@ def extract_rule_match_condition(test_el: ET.Element) -> dict | None:
         return None
     return {"bb_ids": candidate_ids}
 
+def extract_dst_port_condition(test_el: ET.Element) -> dict | None:
+    """DstPort_Test-specific: confirmed from real data -- param 1's
+    values are already the literal port number(s) (e.g. ["445"]), no
+    decoding table needed."""
+    params = {p.get("id"): p for p in test_el.findall("parameter")}
+    if "1" not in params:
+        return None
+    ports = _decode_parameter(params["1"])
+    if not ports:
+        return None
+    return {"field": "Destination Port", "operator": "is any of", "values": ports}
+
+
+def extract_match_count_condition(test_el: ET.Element) -> dict | None:
+    """
+    MatchCount-specific: confirmed from real data. Unlike
+    TriggerMatchCount (references SEPARATE BBs via trigger_bb_ids/
+    later_bb_ids), MatchCount has NO bb_ids -- it's a SELF-REFERENTIAL
+    threshold on the rule's OWN preceding conditions. Confirmed layout:
+        param 2: minimum count, param 3: "same" grouping field,
+        param 4: "different" field, param 5: time value, param 6: time unit
+    """
+    params = {p.get("id"): p for p in test_el.findall("parameter")}
+    if not all(pid in params for pid in ("2", "5", "6")):
+        return None
+
+    def _selection(pid: str) -> str | None:
+        el = params[pid].find("userSelection")
+        return el.text.strip() if el is not None and el.text else None
+
+    def _decoded(pid: str) -> list[str] | None:
+        return _decode_parameter(params[pid])
+
+    count = _selection("2")
+    time_value = _selection("5")
+    if count is None or time_value is None:
+        return None
+
+    same_field = _decoded("3")
+    different_field = _decoded("4")
+    time_unit_raw = _selection("6")
+
+    return {
+        "count": int(count) if count.isdigit() else count,
+        "same_field": same_field[0] if same_field else None,
+        "different_field": different_field[0] if different_field else None,
+        "time_value": int(time_value) if time_value.isdigit() else time_value,
+        "time_unit": _TIME_UNIT_NAMES.get(time_unit_raw, time_unit_raw),
+    }
+
 
 def parse_rule_conditions(rule_xml: str | None) -> list[dict]:
     """
@@ -806,6 +856,14 @@ def parse_rule_conditions(rule_xml: str | None) -> list[dict]:
             rule_match = extract_rule_match_condition(test_el)
             if rule_match:
                 entry["rule_match"] = rule_match
+        elif short_name == "DstPort_Test":
+            dst_port = extract_dst_port_condition(test_el)
+            if dst_port:
+                entry.update(dst_port)
+        elif short_name == "MatchCount":
+            match_count = extract_match_count_condition(test_el)
+            if match_count:
+                entry["match_count"] = match_count
 
         for param_el in test_el.findall("parameter"):
             values = _decode_parameter(param_el)
