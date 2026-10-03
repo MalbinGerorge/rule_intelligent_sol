@@ -62,8 +62,31 @@ services:
     ports:
       - "8082:8081"
 
+
+  chroma:
+    image: chromadb/chroma
+    container_name: rule_intelligent_chroma
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+
+
+
+  chroma-ui:
+    build:
+      context: ./chromadb-ui
+    container_name: rule_intelligent_chroma_ui
+    restart: unless-stopped
+    ports:
+      - "8090:80"
+    depends_on:
+      - chroma
+
+
 volumes:
   neo4j_data:
   neo4j_logs:
   postgres_data:
   redis_data:
+  chroma_data:

@@ -10,6 +10,9 @@ export interface PeerRuleSuggestion {
 	mitre_confidence: string | null;
 	required_log_source_types: string[];
 	customer_has_required_log_source: boolean;
+	similarity_score: number | null;
+	embedding_score: number | null;
+
 }
 
 export interface MitreGap {

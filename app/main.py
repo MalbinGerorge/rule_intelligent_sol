@@ -3,10 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
 from app.core.logging import configure_logging
-from app.core.logging_config import configure_logging
+from app.core.logging_config import configure_logging, configure_simulator_logging
 from app.core.exception_handlers import register_exception_handlers
 
-configure_logging(json_logs=False, log_level="INFO")  # json_logs=True for real deployment
+configure_logging(log_level="INFO")  # json_logs=True for real deployment
+configure_simulator_logging(log_level="INFO")
 
 app = FastAPI(title="Rule Intelligent Sol")
 register_exception_handlers(app)

@@ -22,6 +22,8 @@ class Settings(BaseSettings):
 
     environment: str = "development"
     log_level: str = "INFO"
+    chroma_host: str = "localhost"
+    chroma_port: int = 8001
 
     postgres_username: str = "qradar"
     postgres_password: str = "qradar"

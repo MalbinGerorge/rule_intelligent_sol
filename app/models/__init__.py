@@ -10,6 +10,11 @@ from app.models.validation_result import ValidationResult
 from app.models.sync_run import SyncRun
 from app.models.rule_condition import RuleCondition
 from app.models.log_source_type_reference import LogSourceTypeReference
+from app.models.rule_yaml_representation import RuleYamlRepresentation  # noqa: F401
+from app.models.sigma_generation_job import SigmaGenerationJob  # noqa: F401
+from app.models.embedding_job import EmbeddingJob  # noqa: F401
+from app.models.mitre_technique_catalog import MitreTechniqueCatalog  # noqa: F401
+from app.models.rule_mitre_unified import RuleMitreUnified  # noqa: F401
 
 __all__ = [
     "Customer",
@@ -24,4 +29,9 @@ __all__ = [
     "SyncRun",
     "RuleCondition",
     "LogSourceTypeReference",
+    "RuleYamlRepresentation",
+    "SigmaGenerationJob",
+    "EmbeddingJob",
+    "MitreTechniqueCatalog",
+    "RuleMitreUnified"
 ]

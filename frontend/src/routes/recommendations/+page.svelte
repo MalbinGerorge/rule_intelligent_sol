@@ -1,12 +1,22 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { fetchCustomers, type Customer } from '$lib/api/customers';
-	import { startSigmaGeneration, fetchMitreGaps, fetchLogSourceGaps } from '$lib/api/recommendations';
 	import { selectedCustomerId } from '$lib/stores/customer';
 	import { ApiError } from '$lib/api/client';
 	import { API_BASE } from '$lib/config/env';
+	import {
+		startSigmaGeneration,
+		fetchSigmaJob,
+		fetchMitreGaps,
+		fetchLogSourceGaps,
+		startEmbeddingGeneration,
+		fetchEmbeddingJob,
+		searchByIntent
+	} from '$lib/api/recommendations';
 	import type { MitreGap, LogSourceGap, PeerRuleSuggestion } from '$lib/types/recommendations';
+	import type { SimilaritySearchResult } from '$lib/api/recommendations';
 
+	
 	let customers = $state<Customer[]>([]);
 	let running = $state(false);
 	let processedRules = $state(0);
@@ -16,7 +26,31 @@
 	let error = $state<string | null>(null);
 	let eventSource: EventSource | null = null;
 
+	const SIGMA_JOB_STORAGE_PREFIX = 'rule_intelligent_sol_sigma_job_';
+
+	function getStoredJobId(customerName: string): number | null {
+		if (typeof localStorage === 'undefined') return null;
+		const raw = localStorage.getItem(SIGMA_JOB_STORAGE_PREFIX + customerName);
+		return raw ? Number(raw) : null;
+	}
+
+	function setStoredJobId(customerName: string, jobId: number | null) {
+		if (typeof localStorage === 'undefined') return;
+		const key = SIGMA_JOB_STORAGE_PREFIX + customerName;
+		if (jobId === null) {
+			localStorage.removeItem(key);
+		} else {
+			localStorage.setItem(key, String(jobId));
+		}
+	}
+
 	let viewingSuggestion = $state<PeerRuleSuggestion | null>(null);
+
+	let viewingGap = $state<MitreGap | LogSourceGap | null>(null);
+
+	function closeGapList() {
+		viewingGap = null;
+	}
 
 	function formatAsSigmaYaml(s: PeerRuleSuggestion): string {
 		const lines: string[] = [];
@@ -54,7 +88,9 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
-		if (e.key === 'Escape' && viewingSuggestion) closeModal();
+		if (e.key !== 'Escape') return;
+		if (viewingSuggestion) closeModal();
+		else if (viewingGap) closeGapList();
 	}
 
 	onMount(async () => {
@@ -68,6 +104,7 @@
 
 	async function runSigmaGeneration() {
 		if (selectedCustomerName === null || running) return;
+		const customerName = selectedCustomerName;
 		error = null;
 		running = true;
 		processedRules = 0;
@@ -76,7 +113,7 @@
 		status = 'starting';
 
 		try {
-			const created = await startSigmaGeneration(selectedCustomerName);
+			const created = await startSigmaGeneration(customerName);
 			totalRules = created.total_rules;
 			status = created.status;
 
@@ -86,14 +123,15 @@
 				return;
 			}
 
-			streamProgress(created.id);
+			setStoredJobId(customerName, created.id);
+			streamProgress(created.id, customerName);
 		} catch (e) {
 			error = 'Failed to start Sigma generation';
 			running = false;
 		}
 	}
 
-	function streamProgress(jobId: number) {
+	function streamProgress(jobId: number, customerName: string) {
 		eventSource = new EventSource(`${API_BASE}/recommendations/sigma-jobs/${jobId}/stream`);
 
 		eventSource.onmessage = (event) => {
@@ -106,6 +144,7 @@
 			if (data.status !== 'running') {
 				eventSource?.close();
 				running = false;
+				setStoredJobId(customerName, null);
 			}
 		};
 
@@ -117,6 +156,122 @@
 	}
 
 	const progressPercent = $derived(totalRules > 0 ? Math.round((processedRules / totalRules) * 100) : 0);
+	
+	$effect(() => {
+		const customerName = selectedCustomerName;
+		if (customerName === null) return;
+
+		status = null;
+		error = null;
+		running = false;
+		if (eventSource) {
+			eventSource.close();
+			eventSource = null;
+		}
+
+		const storedJobId = getStoredJobId(customerName);
+		if (storedJobId === null) return;
+
+		fetchSigmaJob(storedJobId)
+			.then((job) => {
+				processedRules = job.processed_rules;
+				totalRules = job.total_rules;
+				failedRules = job.failed_rules;
+				status = job.status;
+
+				if (job.status === 'running') {
+					running = true;
+					streamProgress(storedJobId, customerName);
+				} else {
+					running = false;
+					setStoredJobId(customerName, null);
+				}
+			})
+			.catch(() => {
+				setStoredJobId(customerName, null);
+			});
+	});
+
+
+	// -- Embedding generation (same async pattern as Sigma) --
+	let embeddingRunning = $state(false);
+	let embeddingProcessed = $state(0);
+	let embeddingTotal = $state(0);
+	let embeddingFailed = $state(0);
+	let embeddingStatus = $state<string | null>(null);
+	let embeddingError = $state<string | null>(null);
+	let embeddingEventSource: EventSource | null = null;
+
+	async function runEmbeddingGeneration() {
+		if (embeddingRunning) return;
+		embeddingError = null;
+		embeddingRunning = true;
+		embeddingProcessed = 0;
+		embeddingTotal = 0;
+		embeddingFailed = 0;
+		embeddingStatus = 'starting';
+
+		try {
+			const created = await startEmbeddingGeneration();
+			embeddingTotal = created.total_representations;
+			embeddingStatus = created.status;
+
+			if (created.total_representations === 0) {
+				embeddingStatus = 'completed';
+				embeddingRunning = false;
+				return;
+			}
+
+			embeddingEventSource = new EventSource(
+				`${API_BASE}/recommendations/embeddings-jobs/${created.id}/stream`
+			);
+			embeddingEventSource.onmessage = (event) => {
+				const data = JSON.parse(event.data);
+				embeddingProcessed = data.processed_representations;
+				embeddingTotal = data.total_representations;
+				embeddingFailed = data.failed_representations;
+				embeddingStatus = data.status;
+				if (data.status !== 'running') {
+					embeddingEventSource?.close();
+					embeddingRunning = false;
+				}
+			};
+			embeddingEventSource.onerror = () => {
+				embeddingError = 'Lost connection to the embedding progress stream';
+				embeddingEventSource?.close();
+				embeddingRunning = false;
+			};
+		} catch (e) {
+			embeddingError = 'Failed to start embedding generation';
+			embeddingRunning = false;
+		}
+	}
+
+	const embeddingProgressPercent = $derived(
+		embeddingTotal > 0 ? Math.round((embeddingProcessed / embeddingTotal) * 100) : 0
+	);
+
+
+	// -- Intent-based similarity search --
+	let searchQuery = $state('');
+	let searchResults = $state<SimilaritySearchResult | null>(null);
+	let searchLoading = $state(false);
+	let searchError = $state<string | null>(null);
+
+	async function runIntentSearch() {
+		if (selectedCustomerName === null || !searchQuery.trim() || searchLoading) return;
+		searchLoading = true;
+		searchError = null;
+		try {
+			searchResults = await searchByIntent(selectedCustomerName, searchQuery.trim());
+		} catch (e) {
+			searchError = e instanceof ApiError ? e.message : 'Search failed';
+			searchResults = null;
+		} finally {
+			searchLoading = false;
+		}
+	}
+
 
 	type Tab = 'mitre' | 'logsource';
 	let activeTab = $state<Tab>('mitre');
@@ -156,10 +311,7 @@
 		return anyReady ? 'ready' : 'needs-log-source';
 	}
 
-	function bestSuggestion(gap: { suggested_rules: PeerRuleSuggestion[] }): PeerRuleSuggestion | null {
-		if (gap.suggested_rules.length === 0) return null;
-		return gap.suggested_rules.find((s) => s.customer_has_required_log_source) ?? gap.suggested_rules[0];
-	}
+	
 
 	interface TacticGroup {
 		tactic: string;
@@ -237,6 +389,92 @@
 	{/if}
 </div>
 
+
+<div class="panel">
+	<div class="run-row">
+		<span class="customer-label">Search index</span>
+		<button onclick={runEmbeddingGeneration} disabled={embeddingRunning}>
+			{embeddingRunning ? 'Running…' : 'Generate Embeddings'}
+		</button>
+	</div>
+
+	{#if embeddingError}
+		<div class="empty-state error">{embeddingError}</div>
+	{/if}
+
+	{#if embeddingStatus}
+		<div class="progress-section">
+			<div class="progress-bar-track">
+				<div class="progress-bar-fill" style="width: {embeddingProgressPercent}%"></div>
+			</div>
+			<div class="progress-stats">
+				<span>{embeddingProcessed} / {embeddingTotal} representations embedded</span>
+				{#if embeddingFailed > 0}
+					<span class="failed-count">{embeddingFailed} failed</span>
+				{/if}
+				<span class="status-badge status-{embeddingStatus}">{embeddingStatus}</span>
+			</div>
+		</div>
+	{/if}
+</div>
+
+<div class="panel">
+	<h2 class="panel-title">Search by intent</h2>
+	<p class="subtitle">Describe what you want to detect -- see if a peer already has something like it.</p>
+	<div class="search-row">
+		<input
+			type="text"
+			bind:value={searchQuery}
+			placeholder="e.g. Claude Desktop spawning a PowerShell"
+			onkeydown={(e) => e.key === 'Enter' && runIntentSearch()}
+		/>
+		<button onclick={runIntentSearch} disabled={searchLoading || !searchQuery.trim()}>
+			{searchLoading ? 'Searching…' : 'Search'}
+		</button>
+	</div>
+
+	{#if searchError}
+		<div class="empty-state error">{searchError}</div>
+	{:else if searchResults !== null}
+		{#if searchResults.results.length === 0 && searchResults.excluded_low_relevance === 0}
+			<p class="muted">No sufficiently similar rules found among peers.</p>
+		{:else if searchResults.results.length === 0}
+			<p class="muted">
+				Found {searchResults.excluded_low_relevance} candidate(s), but none were relevant enough to show.
+			</p>
+		{:else}
+			<div class="card-scroll wrap">
+				{#each searchResults.results as result (result.rule_id)}
+					<div class="rec-card">
+						<div class="rec-card-top">
+							{#if result.similarity_score !== null}
+								<span class="badge badge-ready">{Math.round(result.similarity_score * 100)}% match</span>
+							{/if}
+						</div>
+						<p class="rec-title">{result.title}</p>
+						<p class="rec-meta">from {result.source_customer_name}</p>
+						{#if result.embedding_score !== null && result.similarity_score !== null}
+							<p class="score-compare">
+								reranked {Math.round(result.similarity_score * 100)}% · raw embedding {Math.round(
+									result.embedding_score * 100
+								)}%
+							</p>
+						{/if}
+						<button class="view-btn" onclick={() => (viewingSuggestion = result)}>View rule</button>
+					</div>
+				{/each}
+			</div>
+			{#if searchResults.excluded_low_relevance > 0}
+				<p class="excluded-note">
+					{searchResults.excluded_low_relevance} more candidate(s) found, but excluded as not relevant enough.
+				</p>
+			{/if}
+		{/if}
+	{/if}
+</div>
+
+
+
 <div class="tabs">
 	<button class="tab" class:active={activeTab === 'mitre'} onclick={() => (activeTab = 'mitre')}>
 		Mitre coverage gaps
@@ -263,7 +501,6 @@
 				<div class="card-scroll">
 					{#each visibleGaps(group.gaps) as gap (gap.technique_id)}
 						{@const feasibility = gapFeasibility(gap)}
-						{@const suggestion = bestSuggestion(gap)}
 						<div class="rec-card">
 							<div class="rec-card-top">
 								{#if feasibility === 'ready'}
@@ -273,16 +510,14 @@
 								{:else}
 									<span class="badge badge-muted">No peer yet</span>
 								{/if}
-								{#if suggestion?.mitre_source}
-									<span class="source-tag">{suggestion.mitre_source}</span>
+								{#if gap.suggested_rules.length > 0}
+									<span class="count-badge">{gap.suggested_rules.length} rules</span>
 								{/if}
 							</div>
 							<p class="rec-title">{gap.technique_name ?? gap.technique_id}</p>
-							<p class="rec-meta">
-								{gap.technique_id}{#if suggestion} · from {suggestion.source_customer_name}{/if}
-							</p>
-							{#if suggestion}
-								<button class="view-btn" onclick={() => (viewingSuggestion = suggestion)}>View rule</button>
+							<p class="rec-meta">{gap.technique_id}</p>
+							{#if gap.suggested_rules.length > 0}
+								<button class="view-btn" onclick={() => (viewingGap = gap)}>View rules</button>
 							{:else}
 								<span class="view-btn disabled">Nothing to view</span>
 							{/if}
@@ -303,7 +538,6 @@
 	<div class="card-scroll wrap">
 		{#each visibleGaps(logSourceSorted) as gap (gap.qradar_type_id)}
 			{@const feasibility = gapFeasibility(gap)}
-			{@const suggestion = bestSuggestion(gap)}
 			<div class="rec-card">
 				<div class="rec-card-top">
 					{#if feasibility === 'ready'}
@@ -313,13 +547,13 @@
 					{:else}
 						<span class="badge badge-muted">No peer yet</span>
 					{/if}
+					{#if gap.suggested_rules.length > 0}
+						<span class="count-badge">{gap.suggested_rules.length} rules</span>
+					{/if}
 				</div>
 				<p class="rec-title">{gap.log_source_type_name}</p>
-				<p class="rec-meta">
-					{#if suggestion}{suggestion.title} · from {suggestion.source_customer_name}{/if}
-				</p>
-				{#if suggestion}
-					<button class="view-btn" onclick={() => (viewingSuggestion = suggestion)}>View rule</button>
+				{#if gap.suggested_rules.length > 0}
+					<button class="view-btn" onclick={() => (viewingGap = gap)}>View rules</button>
 				{:else}
 					<span class="view-btn disabled">Nothing to view</span>
 				{/if}
@@ -333,6 +567,44 @@
 	</div>
 {/if}
 
+{#if viewingGap}
+	<div class="modal-backdrop" role="presentation" onclick={closeGapList}>
+		<div
+			class="modal"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="gap-list-title"
+			tabindex="-1"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+		>
+			<div class="modal-header">
+				<h2 id="gap-list-title">
+					{'technique_name' in viewingGap ? viewingGap.technique_name ?? viewingGap.technique_id : viewingGap.log_source_type_name}
+				</h2>
+				<button class="close-btn" onclick={closeGapList} aria-label="Close">✕</button>
+			</div>
+			<div class="rule-list">
+				{#each viewingGap.suggested_rules as suggestion (suggestion.rule_id)}
+					<button
+						class="rule-list-item"
+						onclick={() => {
+							viewingSuggestion = suggestion;
+						}}
+					>
+						<div>
+							<p class="rule-list-title">{suggestion.title}</p>
+							<p class="rule-list-meta">from {suggestion.source_customer_name}</p>
+						</div>
+						{#if !suggestion.customer_has_required_log_source}
+							<span class="badge badge-warning">Needs log source</span>
+						{/if}
+					</button>
+				{/each}
+			</div>
+		</div>
+	</div>
+{/if}
 
 {#if viewingSuggestion}
 	<div class="modal-backdrop" role="presentation" onclick={closeModal}>
@@ -383,6 +655,29 @@
 		border-radius: var(--radius);
 		padding: 1.25rem;
 		margin-bottom: 2rem;
+	}
+
+	.panel-title {
+		font-size: 1rem;
+		margin: 0 0 0.25rem;
+	}
+	.search-row {
+		display: flex;
+		gap: 0.5rem;
+		margin: 0.75rem 0;
+	}
+	.search-row input {
+		flex: 1;
+		padding: 0.6rem 0.9rem;
+		background: var(--bg);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		color: var(--text);
+		font-size: 0.9rem;
+	}
+	.search-row input:focus {
+		outline: none;
+		border-color: var(--accent);
 	}
 
 	.run-row {
@@ -508,6 +803,14 @@
 	.card-scroll.wrap {
 		flex-wrap: wrap;
 	}
+		
+	
+	.score-compare {
+		font-size: 0.68rem;
+		color: var(--text-faint);
+		margin: 0 0 0.6rem;
+		flex: 1;
+	}
 
 	.rec-card {
 		min-width: 220px;
@@ -619,6 +922,7 @@
 		z-index: 100;
 		padding: 1.5rem;
 	}
+
 	.modal {
 		background: var(--surface);
 		border: 1px solid var(--border);
@@ -670,5 +974,37 @@
 		overflow-x: auto;
 		white-space: pre;
 		margin: 0;
+	}
+
+	.count-badge {
+		font-size: 0.7rem;
+		color: var(--text-muted);
+	}
+	.rule-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+	.rule-list-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		background: var(--bg);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		padding: 0.75rem;
+		text-align: left;
+		cursor: pointer;
+		width: 100%;
+	}
+	.rule-list-title {
+		font-size: 0.85rem;
+		margin: 0;
+		color: var(--text);
+	}
+	.rule-list-meta {
+		font-size: 0.7rem;
+		color: var(--text-muted);
+		margin: 0.2rem 0 0;
 	}
 </style>

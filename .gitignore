@@ -23,3 +23,7 @@ logs/*
 docs/graph_schema_reference.md
 
 commands.md
+
+data/enterprise-attack.json
+
+logs/

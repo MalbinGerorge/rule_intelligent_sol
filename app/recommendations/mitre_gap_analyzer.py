@@ -30,7 +30,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.recommendations.log_source_gap_analyzer import PeerRuleSuggestion
+from app.api.schemas.recommendations import PeerRuleSuggestion
 from app.recommendations.log_source_lookup import get_onboarded_log_source_types
 
 logger = structlog.get_logger(__name__)

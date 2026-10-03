@@ -36,7 +36,7 @@ def main() -> None:
         qradar_client = build_qradar_client_for_customer(db, customer_id)
         result = sync_custom_event_properties(db, qradar_client, customer_id)
 
-    print(f"Properties synced:               {result['properties_synced']}")
+    # print(f"Properties synced:               {result['properties_synced']}")
     print(f"Builtin fields discovered:       {result['builtin_properties_discovered']}")
     print(f"Expressions synced:              {result['expressions_synced']}")
     print(f"Expressions skipped (unexpected): {result['expressions_skipped_unexpected']}")

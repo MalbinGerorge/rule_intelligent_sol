@@ -25,29 +25,11 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.recommendations.log_source_lookup import get_onboarded_log_source_types
+from app.api.schemas.recommendations import PeerRuleSuggestion, LogSourceGap
 
 logger = structlog.get_logger(__name__)
 
 
-class PeerRuleSuggestion(BaseModel):
-    source_customer_name: str
-    rule_id: int
-    title: str
-    description: str | None
-    level: str | None
-    detection: dict
-    tags: list[str]
-    mitre_source: str | None = None  # 'confirmed' | 'derived' -- only populated by MitreGapAnalyzer
-    mitre_confidence: str | None = None  # only populated when mitre_source == 'derived'
-    required_log_source_types: list[str] = []  # the PEER rule's real REQUIRES_LOGSOURCE_TYPE targets
-    customer_has_required_log_source: bool = True  # can the RECEIVING customer actually use this? True if unknown (no edges) -- never falsely blocks
-
-
-class LogSourceGap(BaseModel):
-    log_source_type_name: str
-    qradar_type_id: int
-    peer_customer_names: list[str]
-    suggested_rules: list[PeerRuleSuggestion]
 
 
 class LogSourceGapAnalyzer:
