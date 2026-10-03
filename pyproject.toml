@@ -2,18 +2,35 @@
 name = "rule-intelligent-sol"
 version = "0.1.0"
 description = "Add your description here"
-readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "alembic>=1.19.0",
     "fastapi>=0.141.1",
-    "psycopg[binary]>=3.3.4",
+    "neo4j>=6.2.0",
+    "psycopg2-binary>=2.9.12",
+    "pydantic-settings>=2.14.2",
+    "python-dotenv>=1.2.2",
+    "requests>=2.34.2",
     "sqlalchemy>=2.0.51",
-    "uvicorn>=0.52.1",
+    "uvicorn[standard]>=0.52.1",
+    "langchain-openai>=0.3.0",
+    "langgraph>=0.2.60",
+    "jinja2>=3.1.6",
+    "celery[redis]>=5.4.0",
+    "pgvector>=0.3.0",
+    "langsmith>=0.10.18",
+    "flower>=2.1.0",
+    "structlog>=26.1.0",
+    "mitreattack-python>=6.2.0",
+    "chromadb>=1.5.9",
+    "sentence-transformers>=6.0.1",
 ]
 
 [dependency-groups]
 dev = [
-    "mypy>=2.3.0",
     "pytest>=9.1.1",
     "ruff>=0.16.1",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
