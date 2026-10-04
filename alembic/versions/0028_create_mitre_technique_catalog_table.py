@@ -1,7 +1,7 @@
 """add mitre_technique_catalog table
 
-Revision ID: 3d80e7dde786
-Revises: 17d4213fc13f
+Revision ID: 202609081537
+Revises: 202609042337
 Create Date: 2026-09-05
 
 The FULL official MITRE ATT&CK Enterprise catalog -- NOT customer-
@@ -10,8 +10,6 @@ MITRE's own public STIX data (confirmed source:
 github.com/mitre-attack/attack-stix-data). Used by MitreGapAnalyzer
 to compare a customer's ACTUAL technique coverage (rule_mitre_unified)
 against the full official framework, not just what's been observed.
-
-IMPORTANT: verify down_revision matches your real `alembic heads`.
 """
 from alembic import op
 import sqlalchemy as sa

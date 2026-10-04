@@ -1,7 +1,7 @@
 """add rule_yaml_representations table
 
-Revision ID: 51b5e16468e4
-Revises: 3487bfa37cbd
+Revision ID: 202608211535
+Revises: 202608201644
 Create Date: 2026-08-21
 
 Stores the LLM-generated Sigma-format representation of each rule

@@ -1,7 +1,7 @@
 """add custom_event_properties and custom_event_property_expressions
 
 Revision ID: ea8c6f14d460
-Revises: 0752f60bef66
+Revises: 852bbc4dadf2
 Create Date: 2026-08-17
 
 IMPORTANT: verify this down_revision matches your real `alembic heads`

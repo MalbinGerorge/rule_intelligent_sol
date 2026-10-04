@@ -1,7 +1,7 @@
 """add sigma_generation_jobs table
 
-Revision ID: 3d7ed659fb78
-Revises: 8fdae31c2e69
+Revision ID: 202608251341
+Revises: 202608241719
 Create Date: 2026-08-23
 
 Tracks async batch Sigma-generation runs -- one row per "generate
@@ -14,8 +14,6 @@ status even on failure.
 processed_rules/failed_rules update INCREMENTALLY during the run (not
 just at the end) so polling shows live progress on a run that could
 take a long time (700+ rules, one LLM call each).
-
-IMPORTANT: verify down_revision matches your real `alembic heads`.
 """
 from alembic import op
 import sqlalchemy as sa

@@ -1,7 +1,7 @@
 """add rule_mitre_unified table
 
-Revision ID: bf2b217b3247
-Revises: 3d7ed659fb78
+Revision ID: 202608252333
+Revises: 202608251341
 Create Date: 2026-08-25
 
 A REAL table (not a view), so it appears normally in database

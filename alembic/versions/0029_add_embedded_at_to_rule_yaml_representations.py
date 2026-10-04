@@ -1,7 +1,7 @@
 """add embedded_at to rule_yaml_representations
 
-Revision ID: 909b69f407b4
-Revises: 3d80e7dde786
+Revision ID: 202609101455
+Revises: 202609081537
 Create Date: 2026-09-09
 """
 from alembic import op

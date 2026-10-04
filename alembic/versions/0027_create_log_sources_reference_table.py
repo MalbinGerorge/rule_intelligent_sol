@@ -1,12 +1,8 @@
-
-
 """add log_sources_reference table
 
-Revision ID: 17d4213fc13f
-Revises: bf2b217b3247
+Revision ID: 202609042337
+Revises: 202608252333
 Create Date: 2026-08-28
-
-IMPORTANT: verify down_revision matches your real `alembic heads`.
 """
 from alembic import op
 import sqlalchemy as sa
