@@ -41,7 +41,7 @@ def load_customer(name: str) -> dict:
                 WHERE c.name = :name
                 """
             ),
-            {"name": name, "key": settings.token_encryption_key},
+            {"name": name, "key": settings.token_encryption_key.get_secret_value()},
         ).mappings().first()
     if row is None:
         raise SystemExit(

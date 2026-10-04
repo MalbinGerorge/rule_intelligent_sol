@@ -17,7 +17,7 @@ def get_driver() -> Driver:
     if _driver is None:
         _driver = GraphDatabase.driver(
             settings.neo4j_uri,
-            auth=(settings.neo4j_username, settings.neo4j_password),
+            auth=(settings.neo4j_username, settings.neo4j_password.get_secret_value()),
         )
     return _driver
 

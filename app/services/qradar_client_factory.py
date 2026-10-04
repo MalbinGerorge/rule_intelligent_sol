@@ -24,7 +24,7 @@ def build_qradar_client_for_customer(db: Session, customer_id: int) -> QRadarCli
             WHERE c.id = :customer_id
             """
         ),
-        {"customer_id": customer_id, "key": settings.token_encryption_key},
+        {"customer_id": customer_id, "key": settings.token_encryption_key.get_secret_value()},
     ).mappings().first()
 
     if row is None:

@@ -1,16 +1,22 @@
+# Local development stack. Every secret comes from .env (see .env.example);
+# `docker compose up` refuses to start if one is missing.
+#
+# All ports are bound to 127.0.0.1 so these services are reachable from
+# this machine only, not from the rest of the network.
+#
+# NOTE: Postgres and Neo4j only apply their password env vars when the
+# data volume is first created. Changing POSTGRES_PASSWORD / NEO4J_PASSWORD
+# in .env later does NOT change the password of an existing volume -- run
+# ALTER USER (Postgres) / ALTER CURRENT USER SET PASSWORD (Neo4j) as well.
 services:
   neo4j:
     image: neo4j:5.24-community
     container_name: rule_intelligent_neo4j
     ports:
-      - "7474:7474"   # browser UI (http://localhost:7474)
-      - "7687:7687"   # bolt protocol (what the Python driver connects to)
+      - "127.0.0.1:7474:7474"   # browser UI (http://localhost:7474)
+      - "127.0.0.1:7687:7687"   # bolt protocol (what the Python driver connects to)
     environment:
-      # username is always "neo4j" — password set here. Change this
-      # before running against anything beyond local dev, and keep it
-      # out of version control the same way we treat the Postgres
-      # password and QRadar token.
-      - NEO4J_AUTH=neo4j/Sillywilly79**
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:?NEO4J_PASSWORD must be set in .env}
       - NEO4J_PLUGINS=["apoc"]  # useful for graph algorithms later (e.g. blast-radius queries)
       - NEO4J_dbms_memory_heap_max__size=1G
     volumes:
@@ -27,11 +33,11 @@ services:
     container_name: rule_intelligent_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Sillywilly79**
-      POSTGRES_DB: rule_intelligent_sol
+      POSTGRES_USER: ${POSTGRES_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+      POSTGRES_DB: ${POSTGRES_DB_NAME:-rule_intelligent_sol}
     ports:
-      - "5434:5432"
+      - "127.0.0.1:5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -40,7 +46,7 @@ services:
     container_name: rule_intelligent_adminer
     restart: unless-stopped
     ports:
-      - "8081:8080"
+      - "127.0.0.1:8081:8080"
     depends_on:
       - postgres
 
@@ -48,8 +54,9 @@ services:
     image: redis:7-alpine
     container_name: rule_intelligent_redis
     restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD must be set in .env}"]
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
 
@@ -58,31 +65,18 @@ services:
     container_name: rule_intelligent_redis_ui
     restart: unless-stopped
     environment:
-      - REDIS_HOSTS=local:redis:6379
+      # label:host:port:db:password
+      - REDIS_HOSTS=local:redis:6379:0:${REDIS_PASSWORD:?REDIS_PASSWORD must be set in .env}
     ports:
-      - "8082:8081"
-
+      - "127.0.0.1:8082:8081"
 
   chroma:
     image: chromadb/chroma
     container_name: rule_intelligent_chroma
     ports:
-      - "8001:8000"
+      - "127.0.0.1:8001:8000"
     volumes:
       - chroma_data:/chroma/chroma
-
-
-
-  chroma-ui:
-    build:
-      context: ./chromadb-ui
-    container_name: rule_intelligent_chroma_ui
-    restart: unless-stopped
-    ports:
-      - "8090:80"
-    depends_on:
-      - chroma
-
 
 volumes:
   neo4j_data:
