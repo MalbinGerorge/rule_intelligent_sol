@@ -1,7 +1,7 @@
 """add embedding_jobs table
 
-Revision ID: 75870c08f395
-Revises: 909b69f407b4
+Revision ID: 202609101500
+Revises: 202609101455
 Create Date: 2026-09-09
 """
 from alembic import op

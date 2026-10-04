@@ -1,7 +1,7 @@
-"""initial schema
+"""initial schema: customers, credentials, rules, building blocks, mitre mappings, offense contributions, sync runs, validation results
 
 Revision ID: c7097f2544b3
-Revises: 
+Revises:
 Create Date: 2026-08-05 11:25:10.498619
 """
 from typing import Sequence, Union

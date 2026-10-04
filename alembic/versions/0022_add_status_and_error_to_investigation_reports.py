@@ -1,6 +1,6 @@
 """add status/error to investigation_reports for async job tracking
 
-Revision ID: <generate via alembic revision, or ask me>
+Revision ID: 202608201644
 Revises: 3487bfa37cbd
 Create Date: 2026-08-20
 

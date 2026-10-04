@@ -1,7 +1,7 @@
 """add correlation support to rule_yaml_representations
 
-Revision ID: 8fdae31c2e69
-Revises: 51b5e16468e4
+Revision ID: 202608241719
+Revises: 202608211535
 Create Date: 2026-08-22
 
 CONFIRMED against real Sigma spec (sigmahq.io/docs/meta/correlations.html):
@@ -11,8 +11,6 @@ TriggerTimeout -- 94 of 742 real rules, ~13%) are NOT expressible as a
 single Sigma detection block. Real Sigma requires TWO separate linked
 documents: a "base" detection rule (given a `name`) and a `correlation`
 rule referencing it by that name.
-
-IMPORTANT: verify down_revision matches your real `alembic heads`.
 """
 from alembic import op
 import sqlalchemy as sa

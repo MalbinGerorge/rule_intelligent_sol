@@ -1,7 +1,7 @@
 """add primary key to rule_mitre_unified
 
-Revision ID: d0f94b82467c
-Revises: 75870c08f395
+Revision ID: 202609111828
+Revises: 202609101500
 Create Date: 2026-09-11
 
 CONFIRMED REAL GAP: the original migration for this table never
@@ -11,8 +11,6 @@ created via hand-written migrations so far (they were never added to
 app/models/, a real risk given target_metadata = Base.metadata and
 autogenerate now being available: Alembic could otherwise see these
 as unwanted tables and generate a DROP for them).
-
-IMPORTANT: verify down_revision matches your real `alembic heads`.
 """
 from alembic import op
 import sqlalchemy as sa
