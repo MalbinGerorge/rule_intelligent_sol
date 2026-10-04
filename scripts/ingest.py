@@ -42,7 +42,7 @@ def load_customer(name: str) -> dict:
                 WHERE c.name = :name
                 """
             ),
-            {"name": name, "key": settings.token_encryption_key},
+            {"name": name, "key": settings.token_encryption_key.get_secret_value()},
         ).mappings().first()
     if row is None:
         raise SystemExit(f"No customer named '{name}' with saved credentials. Run scripts/push_credentials.py first.")

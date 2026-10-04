@@ -30,7 +30,7 @@ MAX_RETRIES = 1
 def _get_llm() -> AzureChatOpenAI:
     return AzureChatOpenAI(
         azure_endpoint=settings.azure_openai_endpoint,
-        api_key=settings.azure_openai_api_key,
+        api_key=settings.azure_openai_api_key.get_secret_value(),
         api_version=settings.azure_openai_api_version,
         azure_deployment=settings.azure_openai_deployment,
         temperature=0,

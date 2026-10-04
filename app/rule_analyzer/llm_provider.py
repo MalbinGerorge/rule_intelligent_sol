@@ -28,7 +28,7 @@ class LLMProvider:
         """GPT-5.2 -- analysis, reasoning, decisions."""
         return AzureChatOpenAI(
             azure_endpoint=settings.azure_openai_endpoint,
-            api_key=settings.azure_openai_api_key,
+            api_key=settings.azure_openai_api_key.get_secret_value(),
             api_version=settings.azure_openai_api_version,
             azure_deployment=settings.azure_openai_deployment,
             temperature=temperature,
@@ -41,7 +41,7 @@ class LLMProvider:
         name on the same resource."""
         return AzureChatOpenAI(
             azure_endpoint=settings.azure_openai_endpoint_4o,
-            api_key=settings.azure_openai_api_key_4o,
+            api_key=settings.azure_openai_api_key_4o.get_secret_value(),
             api_version=settings.azure_openai_api_version_4o,
             azure_deployment=settings.azure_openai_deployment_4o,
             temperature=temperature,
