@@ -34,3 +34,6 @@ dev = [
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+# Only tests/ runs by default. evals/ hits real LLMs, QRadar and dev data
+# and is run by hand: `uv run pytest evals/<suite>`.
+testpaths = ["tests"]
