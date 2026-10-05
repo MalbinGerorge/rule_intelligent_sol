@@ -1,0 +1,12 @@
+# Commits that only reformat or mechanically rewrite code. `git blame` skips
+# them so each line still points at the commit that really changed it.
+# GitHub's blame view uses this file automatically; locally run once:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# These SHAs must survive merging: merge PRs that touch this file with a merge
+# commit, not squash or rebase (both rewrite SHAs).
+
+# ruff check --fix: sort imports, modernize syntax
+f028856459aeb07993b33b822a3afc55441b9e65
+# ruff format
+581f024a40d6983d8fc4351e0737977206b50656

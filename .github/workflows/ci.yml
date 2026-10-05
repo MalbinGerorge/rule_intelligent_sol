@@ -39,3 +39,8 @@ jobs:
       # --output-format=github turns findings into inline PR annotations.
       - name: Ruff lint
         run: uv run --only-group dev ruff check --output-format=github .
+
+      # --check only reports; it never rewrites files in CI. Fix locally
+      # with `uv run ruff format .`
+      - name: Ruff format
+        run: uv run --only-group dev ruff format --check --diff .
