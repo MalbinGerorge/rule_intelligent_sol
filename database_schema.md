@@ -278,7 +278,7 @@ Splitting `T1078.004` into `techniques: ['T1078']` and `sub_techniques: ['T1078.
 ## Ingestion flow (implemented)
 
 ```
-QRadarClient (app/services/qradar_client.py)
+QRadarClient (app/integrations/qradar/client.py)
   fetch_rules_with_data() / fetch_rules() / fetch_building_blocks()
   fetch_rules_offense_contributions() / fetch_mitre_mapping(identifier)
         │
@@ -288,9 +288,9 @@ scripts/test_pull_data.py — fetch live, save to logs/raw_pulls/ for inspection
 scripts/run_ingestion.py  — read from a saved logs/raw_pulls/ dir, push to Postgres
         │
         ▼
-app/services/rule_ingest.py                 → upsert_rules, upsert_rules_reference, upsert_building_blocks_reference
-app/services/offense_contribution_ingest.py → upsert_offense_contributions
-app/services/mitre_mapping_ingest.py        → upsert_mitre_mappings
+app/ingestion/jobs/rule_ingest.py                 → upsert_rules, upsert_rules_reference, upsert_building_blocks_reference
+app/ingestion/jobs/offense_contribution_ingest.py → upsert_offense_contributions
+app/ingestion/jobs/mitre_mapping_ingest.py        → upsert_mitre_mappings
         │
         ▼
 Postgres tables (all upsert on their unique constraint — re-running

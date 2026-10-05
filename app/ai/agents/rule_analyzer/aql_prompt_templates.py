@@ -1,7 +1,7 @@
 """
 AQL generation guidance for the investigating LLM -- the rules and
 confirmed-correct few-shot examples it needs to write safe, valid AQL
-against a live QRadar console. Kept SEPARATE from investigation_nodes.py
+against a live QRadar console. Kept SEPARATE from app/ai/agents/rule_analyzer/nodes.py
 (which wires this into the actual run_aql_search tool) so the prompt
 content itself can be reviewed, tuned, and versioned independently of
 the tool machinery around it.

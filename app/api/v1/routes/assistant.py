@@ -1,6 +1,6 @@
 """
 AI agent API — natural language question -> Cypher -> graph results.
-Thin HTTP layer only; all real logic lives in app/agent/*.
+Thin HTTP layer only; all real logic lives in app/ai/agents/assistant/.
 """
 
 from __future__ import annotations

@@ -29,7 +29,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
 from app.ai.agents.simulator.attack_interpreter import AttackInterpreterAgent
-from app.ai.agents.simulator.dsm_property_extractor_trial import DSMPropertyExtractor
+from app.ai.agents.simulator.dsm_property_extractor import DSMPropertyExtractor
 from app.ai.agents.simulator.mitre_validator import MitreTechniqueValidator
 from app.ai.agents.simulator.orchestrator import SimulatorOrchestrator
 from app.ai.agents.simulator.reference_log_retriever import ReferenceLogRetriever

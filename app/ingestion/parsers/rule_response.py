@@ -1,7 +1,7 @@
 """
 Parses the <responses>/<limiter> section of rule_xml -- a DIFFERENT
 part of the tree from <testDefinitions> (conditions parsed by
-rule_condition_parser.py). This is what a rule DOES once its
+app/ingestion/parsers/rule_condition.py). This is what a rule DOES once its
 conditions match: dispatch a new event, create/name an offense, write
 to a reference set/map/table, or throttle its own responses.
 

@@ -88,7 +88,7 @@ def configure_logging(log_level: str = "INFO") -> None:
 
 def configure_simulator_logging(log_level: str = "INFO") -> None:
     """Call this ONCE, alongside configure_logging(), at startup.
-    Routes every app.agents.simulator.* log event into its own file."""
+    Routes every SIMULATOR_LOGGER_NAME.* log event into its own file."""
     LOG_DIR.mkdir(exist_ok=True)
     shared_processors = _shared_processors()
 

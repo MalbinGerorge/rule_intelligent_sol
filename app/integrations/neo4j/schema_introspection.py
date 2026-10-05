@@ -2,7 +2,7 @@
 Generates a static schema-reference document for the AI/agentic layer —
 Layer 1 (auto-generated structural facts) of the two-layer grounding
 design. Run manually whenever the graph schema changes (a new
-_load_*_edges function added to loader.py, a relationship renamed,
+_load_*_edges function added to app/ingestion/jobs/graph_build.py, a relationship renamed,
 etc.), NOT on every agent request — same "pull once, reuse" philosophy
 as everything else in this project. See docs/graph_schema_reference.md
 for Layer 2 (hand-written semantics) that lives alongside this file's

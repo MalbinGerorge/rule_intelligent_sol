@@ -1,7 +1,7 @@
 """
 Safety layer for LLM-generated AQL, before it's ever sent to a live
 QRadar console -- same two-layer defense-in-depth philosophy as
-app/agent/cypher_safety.py, adapted for AQL's different risk profile.
+app/ai/agents/assistant/cypher_safety.py, adapted for AQL's different risk profile.
 
 Cypher's risk was DATA INTEGRITY (a write could corrupt/delete real
 data). AQL's risk is different: Ariel search against event data has

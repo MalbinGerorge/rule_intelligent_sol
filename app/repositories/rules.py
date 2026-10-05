@@ -1,7 +1,7 @@
 """Read-side query logic for rule_summary.
 
 Returns plain dicts -- deliberately no Pydantic/schema import here.
-Schemas are an API/HTTP concern (app/api/schemas/), not a service-layer
+Schemas are an API/HTTP concern (app/api/v1/schemas/), not a service-layer
 concern; converting a row into a response shape is the endpoint's job.
 This keeps the service layer reusable by anything (CLI scripts, a
 future worker, tests) without dragging in FastAPI's response contracts.

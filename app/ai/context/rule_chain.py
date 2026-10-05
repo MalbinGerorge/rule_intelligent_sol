@@ -3,7 +3,7 @@ Builds the full picture of ONE rule for the Rule Analyzer.
 
 Multiple formatting approaches exist here, in the order they were
 built and superseded:
-  - fetch_rule_chain (Neo4j, via graph_query.py): good for graph
+  - fetch_rule_chain (Neo4j, via app/repositories/graph.py): good for graph
     traversal questions (dependents, MITRE, etc.) -- same functions
     already powering UI2.
   - fetch_sequential_chain (Postgres, via rule_conditions directly):
@@ -35,23 +35,23 @@ from neo4j import Session as Neo4jSession
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.repositories import graph as graph_query
+from app.repositories import graph as graph_repo
 
 
 def fetch_rule_chain(session: Neo4jSession, rule_id: int) -> dict | None:
     """Returns the same shape UI2's /graph/rules/{id} endpoint returns,
     or None if the rule doesn't exist in the graph."""
-    rule = graph_query.get_rule_node(session, rule_id)
+    rule = graph_repo.get_rule_node(session, rule_id)
     if rule is None:
         return None
 
     return {
         "rule": rule,
-        "references": graph_query.get_rule_references(session, rule_id),
-        "conditions": graph_query.get_rule_conditions(session, rule_id),
-        "log_sources": graph_query.get_rule_logsources(session, rule_id),
-        "mitre": graph_query.get_rule_mitre(session, rule_id),
-        "followed_by": graph_query.get_rule_followed_by(session, rule_id),
+        "references": graph_repo.get_rule_references(session, rule_id),
+        "conditions": graph_repo.get_rule_conditions(session, rule_id),
+        "log_sources": graph_repo.get_rule_logsources(session, rule_id),
+        "mitre": graph_repo.get_rule_mitre(session, rule_id),
+        "followed_by": graph_repo.get_rule_followed_by(session, rule_id),
     }
 
 
@@ -415,7 +415,7 @@ def format_full_chain_for_llm(full_chain: dict) -> str:
 
 def _extract_bb_ids_from_structured_data(structured_data: dict) -> list[str]:
     """Every place a condition can reference BB(s), across all the
-    structural shapes confirmed in rule_condition_parser.py. A given
+    structural shapes confirmed in app/ingestion/parsers/rule_condition.py. A given
     condition matches none of these when it's a plain field check
     (e.g. ArielFilterTest never references a BB)."""
     bb_ids: list[str] = []

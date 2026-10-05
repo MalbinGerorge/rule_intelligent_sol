@@ -1,22 +1,21 @@
 """
 DSM Property Extractor -- DETERMINISTIC (no LLM). Turns one raw log
-payload into a list of named fields, using ONLY QRadar's own synced
-extraction expressions (custom_event_property_expressions).
+payload into a {property_name: value} dictionary, so downstream
+agents reason over clean, named fields instead of parsing raw text.
 
-Scope, deliberately narrow: only 'regex' expressions are applied,
-scoped to this customer and to the payload's log source type / log
-source. No generic KEY=VALUE pass -- real QRadar rules evaluate
-against QRadar's own extracted properties, not against whatever a raw
-key happens to be named, so a field with no synced property behind it
-is not something a rule could reference anyway.
-
-raw_message is kept separately (not split into key=value, no regex
-applied to it) purely as fallback context for Field Substitution, for
-whatever the synced regex expressions did not capture.
+Two passes:
+  1. Generic key=value pass -- splits the payload on tabs and reads
+     KEY=VALUE pairs (e.g. EventID=4634). A built-in heuristic for
+     WinCollect-style payloads, NOT QRadar's authoritative parse.
+  2. Synced DSM expressions -- QRadar's own extraction rules, read
+     from custom_event_property_expressions (scoped to this
+     customer, and to the payload's log source type / log source).
+     If both passes produce the same property name, the QRadar
+     expression wins.
 
 Known limits (kept visible via skipped_expression_counts, not hidden):
-  - Only 'regex' expressions are applied; json/xml/cef/leef/nvp/aql
-    are counted as skipped by type, never silently dropped.
+  - Only 'regex' expressions are applied so far; json/xml/cef/leef/
+    nvp/aql are counted as skipped by type.
   - qid / low_level_category_id scoping is NOT evaluated -- the event's
     QID isn't known from the raw payload. A regex just won't match
     text it doesn't apply to, but this can over-apply in rare cases.
@@ -42,7 +41,9 @@ from app.ai.agents.simulator.schemas import (
 
 logger = structlog.get_logger(__name__)
 
-PAYLOAD_KEY = "Payload"  # column alias the retriever's AQL gives the raw payload
+_KEY_PATTERN = re.compile(r"^[A-Za-z_][\w\-\.]*$")
+# Column alias the retriever's AQL gives the raw payload ("UTF8(payload) AS Payload").
+PAYLOAD_KEY = "Payload"
 ANY = -1  # QRadar's "not scoped to a specific value" marker in scoping columns
 
 
@@ -58,26 +59,29 @@ class DSMPropertyExtractor:
         skipped: dict[str, int] = {}
 
         found: dict[str, ExtractedProperty] = {}
+        for prop in self._extract_generic_nvp(payload):
+            found[prop.name] = prop
+
         for expr in self._load_applicable_expressions(log_source_type_id, log_source_id):
             if expr["expression_type"] != "regex":
                 skipped[expr["expression_type"]] = skipped.get(expr["expression_type"], 0) + 1
                 continue
             value = self._apply_regex(expr, payload, skipped)
             if value is not None:
+                # QRadar's own expression wins over the generic pass.
                 found[expr["property_name"]] = ExtractedProperty(
                     name=expr["property_name"], value=value, method="regex"
                 )
 
         result = ExtractedProperties(
-            properties=list(found.values()),
-            raw_message=payload.strip(),
-            skipped_expression_counts=skipped,
+            properties=list(found.values()), skipped_expression_counts=skipped
         )
         logger.info(
             "dsm_properties_extracted",
             customer_id=self.customer_id,
             log_source_type_id=log_source_type_id,
             property_count=len(result.properties),
+            regex_count=sum(1 for p in result.properties if p.method == "regex"),
             skipped_expression_counts=skipped,
             duration_ms=round((time.perf_counter() - started_at) * 1000, 1),
         )
@@ -97,6 +101,24 @@ class DSMPropertyExtractor:
                 continue
             results.append(self.extract(payload, sample.log_source_type_id, sample.log_source_id))
         return results
+
+    def _extract_generic_nvp(self, payload: str) -> list[ExtractedProperty]:
+        properties = []
+        for index, segment in enumerate(payload.strip().split("\t")):
+            key, sep, value = segment.partition("=")
+            if not sep:
+                continue
+            key = key.strip()
+            if index == 0 and " " in key:
+                # First segment carries the syslog header ("<13>Sep 26 ... HOST AgentDevice");
+                # the real key is the last token.
+                key = key.split()[-1]
+            if not _KEY_PATTERN.match(key):
+                continue
+            properties.append(
+                ExtractedProperty(name=key, value=value.strip(), method="nvp_generic")
+            )
+        return properties
 
     def _load_applicable_expressions(
         self, log_source_type_id: int | None, log_source_id: int | None
@@ -136,8 +158,7 @@ class DSMPropertyExtractor:
             return None
         group = expr["capture_group"] or 1
         try:
-            value = match.group(group)
+            return match.group(group)
         except IndexError:
             skipped["capture_group_out_of_range"] = skipped.get("capture_group_out_of_range", 0) + 1
             return None
-        return value

@@ -9,7 +9,7 @@ class RuleMitreUnified(Base):
     sync_rule_mitre_unified() -- combines QRadar-confirmed
     (mitre_source='confirmed') and LLM-inferred
     (mitre_source='derived') technique mappings into one queryable
-    shape. See app/services/mitre_unified_sync.py."""
+    shape. See app/ingestion/jobs/mitre_unified_sync.py."""
 
     __tablename__ = "rule_mitre_unified"
 

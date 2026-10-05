@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 class RuleCondition(Base):
     """
     One row per <test> element (excluding BB/rule-reference tests already
-    captured in rule_building_blocks — see rule_condition_parser.py).
+    captured in rule_building_blocks — see app/ingestion/parsers/rule_condition.py).
 
     structured_data is JSONB rather than fixed columns because ~50+
     different test classes each produce a different shape (a threshold

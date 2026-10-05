@@ -8,7 +8,7 @@ TWO layers of defense, deliberately not relying on either alone:
      principle dodge a pure regex check (comments, string escaping,
      odd whitespace).
   2. Neo4j's own read-only transaction mode (see execute_readonly_cypher
-     in app/agent/graph_agent_query.py): the AUTHORITATIVE enforcement.
+     in app/ai/agents/assistant/graph_query.py): the AUTHORITATIVE enforcement.
      Running a query via session.execute_read() puts the transaction in
      READ access mode server-side — Neo4j itself refuses any write
      clause inside it, regardless of what the query text says. This is

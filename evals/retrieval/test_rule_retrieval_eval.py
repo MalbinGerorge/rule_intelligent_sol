@@ -5,7 +5,7 @@ ChromaDB + Qwen3-Embedding-0.6B). Deliberately an INTEGRATION test,
 not a unit test with mocks -- the entire point is measuring real
 retrieval QUALITY, which mocks can't tell us anything about.
 
-Uses the SAME structured logging as the real app (app/core/logging_config.py)
+Uses the SAME structured logging as the real app (app/core/logging.py)
 -- every case's real outcome (question, hit/miss, top score, latency)
 gets written to BOTH console and the rotating logs/app.log file,
 timestamp-first. This means eval RESULTS accumulate as a real,

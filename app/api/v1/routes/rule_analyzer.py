@@ -3,7 +3,7 @@ Async investigation API for the Rule Analyzer -- POST kicks off a
 Celery task and returns immediately with an id; GET polls that id for
 progress/results. A full investigation can take 30s-2+ minutes, so
 this deliberately never blocks an HTTP request waiting for it to
-finish -- see app/celery_app.py for the full reasoning.
+finish -- see app/workers/celery_app.py for the full reasoning.
 """
 
 from __future__ import annotations
@@ -21,7 +21,8 @@ from app.api.v1.schemas.rule_analyzer import (
     InvestigationListItem,
     InvestigationListResponse,
 )
-from app.workers.tasks.investigation import create_pending_investigation, run_investigation_task
+from app.services.investigations import create_pending_investigation
+from app.workers.tasks.investigation import run_investigation_task
 
 router = APIRouter(prefix="/rule-analyzer", tags=["rule-analyzer"])
 

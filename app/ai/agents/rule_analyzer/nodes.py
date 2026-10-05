@@ -1,7 +1,7 @@
 """
 Node LOGIC for the Rule Analyzer's investigation graph -- what happens
 at each step. Graph STRUCTURE (which nodes exist, how they connect,
-routing logic) lives in investigation_graph.py; this file is purely
+routing logic) lives in app/ai/agents/rule_analyzer/graph.py; this file is purely
 the implementation each node executes when the graph reaches it.
 """
 
@@ -159,7 +159,7 @@ def build_nodes(
 ) -> dict:
     """Builds and returns the 4 node functions as a dict keyed by node
     name, ready to be registered onto a StateGraph by
-    investigation_graph.py. Kept as ONE factory (rather than 4
+    app/ai/agents/rule_analyzer/graph.py. Kept as ONE factory (rather than 4
     standalone functions) because all 4 nodes share the same
     closed-over dependencies (db, tools, llm instances) -- same
     reasoning as build_agent_graph(driver) in the Q&A agent."""

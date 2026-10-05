@@ -1,5 +1,5 @@
-"""Rules API — thin HTTP layer. No SQL here (that's app/services/rule_query.py).
-Converts service-layer dicts into API schemas (app/api/schemas/rule.py) —
+"""Rules API — thin HTTP layer. No SQL here (that's app/repositories/rules.py).
+Converts service-layer dicts into API schemas (app/api/v1/schemas/rule.py) —
 that conversion happens here, not in the service layer."""
 
 from __future__ import annotations
@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps.db import get_db
 from app.api.v1.schemas.rule import RuleHealthMetrics, RuleListResponse, RuleSummary
-from app.repositories import rules as rule_query
+from app.repositories import rules as rules_repo
 
 router = APIRouter(prefix="/rules", tags=["rules"])
 
@@ -22,7 +22,7 @@ def list_rules(
     limit: int = Query(50, le=200),
     offset: int = Query(0, ge=0),
 ) -> RuleListResponse:
-    rows = rule_query.list_rules(db, customer_id, object_type, limit, offset)
+    rows = rules_repo.list_rules(db, customer_id, object_type, limit, offset)
     rules = [RuleSummary.model_validate(row) for row in rows]
     return RuleListResponse(count=len(rules), results=rules)
 
@@ -35,13 +35,13 @@ def get_health_metrics(
     # NOTE: this route must stay defined ABOVE /{rule_id} below — FastAPI
     # matches routes in registration order, and "/metrics" would otherwise
     # get swallowed by the /{rule_id} path parameter.
-    metrics = rule_query.get_health_metrics(db, customer_id)
+    metrics = rules_repo.get_health_metrics(db, customer_id)
     return RuleHealthMetrics.model_validate(metrics)
 
 
 @router.get("/{rule_id}", response_model=RuleSummary)
 def get_rule(rule_id: int, db: Session = Depends(get_db)) -> RuleSummary:
-    row = rule_query.get_rule_by_id(db, rule_id)
+    row = rules_repo.get_rule_by_id(db, rule_id)
     if row is None:
         raise HTTPException(status_code=404, detail="rule not found")
     return RuleSummary.model_validate(row)

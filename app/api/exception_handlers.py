@@ -145,7 +145,7 @@ async def unhandled_handler(request: Request, exc: Exception) -> JSONResponse:
 
 def register_exception_handlers(app: FastAPI) -> None:
     """Call ONCE, right after creating the FastAPI() app instance in
-    app/main.py."""
+    app/api/main.py."""
     app.add_exception_handler(APIError, api_error_handler)
     app.add_exception_handler(RequestValidationError, validation_handler)
     app.add_exception_handler(IntegrityError, integrity_handler)

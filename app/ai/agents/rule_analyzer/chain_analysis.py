@@ -1,6 +1,6 @@
 """
 The first real reasoning step of the Rule Analyzer: GPT-5.2 reads the
-formatted rule chain (from rule_chain_context.py) and produces its
+formatted rule chain (from app/ai/context/rule_chain.py) and produces its
 initial understanding -- what this rule is meant to detect, and
 everything that must structurally be true for it to ever fire. This
 becomes the ReAct loop's starting context, not a disconnected summary.

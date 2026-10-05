@@ -1,7 +1,7 @@
 """
 Prompt construction + response parsing for the NL-to-Cypher agent.
 Pure, reusable logic — the actual LLM call and orchestration now live
-in app/agent/agent_nodes.py (LangGraph), which imports from here.
+in app/ai/agents/assistant/nodes.py (LangGraph), which imports from here.
 """
 
 from __future__ import annotations

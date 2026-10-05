@@ -1,6 +1,6 @@
 """
 Graph API — thin HTTP layer over Neo4j. No Cypher here (that's
-app/services/graph_query.py). Same pattern as app/api/endpoint/rules.py:
+app/repositories/graph.py). Same pattern as app/api/v1/routes/rules.py:
 endpoint owns HTTP concerns and dict-to-schema conversion, service
 layer owns the actual query logic.
 """
@@ -17,7 +17,7 @@ from app.api.v1.schemas.graph import (
     RuleGraphDetail,
     TechniqueSearchResult,
 )
-from app.repositories import graph as graph_query
+from app.repositories import graph as graph_repo
 
 router = APIRouter(prefix="/graph", tags=["graph"])
 
@@ -28,7 +28,7 @@ def search_rules_by_field(
     customer_id: int = Query(...),
     session: Neo4jSession = Depends(get_graph_session),
 ) -> list[FieldSearchResult]:
-    rows = graph_query.get_rules_by_field(session, field, customer_id)
+    rows = graph_repo.get_rules_by_field(session, field, customer_id)
     return [FieldSearchResult(**r) for r in rows]
 
 
@@ -38,7 +38,7 @@ def search_rules_by_technique(
     customer_id: int = Query(...),
     session: Neo4jSession = Depends(get_graph_session),
 ) -> list[TechniqueSearchResult]:
-    rows = graph_query.get_rules_by_technique(session, technique_id, customer_id)
+    rows = graph_repo.get_rules_by_technique(session, technique_id, customer_id)
     return [TechniqueSearchResult(**r) for r in rows]
 
 
@@ -48,7 +48,7 @@ def get_bb_dependents(
     customer_id: int = Query(...),
     session: Neo4jSession = Depends(get_graph_session),
 ) -> list[BuildingBlockDependent]:
-    rows = graph_query.get_bb_dependents(session, identifier, customer_id)
+    rows = graph_repo.get_bb_dependents(session, identifier, customer_id)
     return [BuildingBlockDependent(**r) for r in rows]
 
 
@@ -61,15 +61,15 @@ def get_rule_graph(
     # "specific path before wildcard" rule we learned the hard way on
     # the Postgres /rules/metrics route. "search" would otherwise try
     # to parse as an int rule_id and 422.
-    rule = graph_query.get_rule_node(session, rule_id)
+    rule = graph_repo.get_rule_node(session, rule_id)
     if rule is None:
         raise HTTPException(status_code=404, detail="rule not found in graph")
 
     return RuleGraphDetail(
         rule=rule,
-        references=graph_query.get_rule_references(session, rule_id),
-        conditions=graph_query.get_rule_conditions(session, rule_id),
-        log_sources=graph_query.get_rule_logsources(session, rule_id),
-        mitre=graph_query.get_rule_mitre(session, rule_id),
-        followed_by=graph_query.get_rule_followed_by(session, rule_id),
+        references=graph_repo.get_rule_references(session, rule_id),
+        conditions=graph_repo.get_rule_conditions(session, rule_id),
+        log_sources=graph_repo.get_rule_logsources(session, rule_id),
+        mitre=graph_repo.get_rule_mitre(session, rule_id),
+        followed_by=graph_repo.get_rule_followed_by(session, rule_id),
     )

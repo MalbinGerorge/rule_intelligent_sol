@@ -34,18 +34,16 @@ from app.core.exceptions import NotFoundError
 from app.db.session import engine as sync_engine
 from app.integrations.neo4j.client import get_driver
 from app.repositories.rules import list_canonical_rules
+from app.services.embedding_jobs import create_pending_embedding_job
 from app.services.gap_analysis.log_source import LogSourceGapAnalyzer
 from app.services.gap_analysis.mitre import MitreGapAnalyzer
-from app.workers.tasks.embeddings import (
-    create_pending_embedding_job,
-    run_embedding_batch_task,
-)
-from app.workers.tasks.sigma import (
+from app.services.sigma_generation import (
     create_pending_sigma_job,
     get_rule_ids_with_existing_sigma,
     resolve_rule_names_to_canonical_rules,
-    run_sigma_batch_task,
 )
+from app.workers.tasks.embeddings import run_embedding_batch_task
+from app.workers.tasks.sigma import run_sigma_batch_task
 
 router = APIRouter(prefix="/recommendations", tags=["recommendations"])
 
