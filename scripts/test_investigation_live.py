@@ -26,7 +26,9 @@ with engine.connect() as db:
 
     result = run_investigation(db, provider, qradar_client, customer_id, RULE_ID)
 
-    trace_path = Path(__file__).resolve().parent.parent / "app" / "rule_analyzer" / "trace.md"
+    trace_path = (
+        Path(__file__).resolve().parent.parent / "docs" / "notes" / "rule_analyzer_trace.md"
+    )
     with open(trace_path, "w", encoding="utf-8") as f:
         f.write("# Investigation trace\n\n")
         f.write("```\n")

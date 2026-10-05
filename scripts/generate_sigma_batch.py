@@ -27,9 +27,8 @@ from app.ai.sigma.generator import SigmaGenerator
 from app.db.session import engine
 from app.repositories.rules import list_canonical_rules
 
-FAILURE_LOG_PATH = (
-    Path(__file__).resolve().parent.parent / "app" / "recommendations" / "sigma_batch_failures.md"
-)
+# A run report, not documentation: logs/ is git-ignored.
+FAILURE_LOG_PATH = Path(__file__).resolve().parent.parent / "logs" / "sigma_batch_failures.md"
 
 with engine.connect() as read_db:
     customer_id = read_db.execute(
@@ -77,5 +76,6 @@ if failures:
     lines = ["# Sigma Batch Failures", ""]
     for f in failures:
         lines.append(f"- Rule {f['rule_id']} ({f['rule_name']}): {f['error']}")
+    FAILURE_LOG_PATH.parent.mkdir(exist_ok=True)
     FAILURE_LOG_PATH.write_text("\n".join(lines), encoding="utf-8")
     print(f"Failure details written to {FAILURE_LOG_PATH}")
