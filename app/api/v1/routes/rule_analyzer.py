@@ -21,7 +21,8 @@ from app.api.v1.schemas.rule_analyzer import (
     InvestigationListItem,
     InvestigationListResponse,
 )
-from app.workers.tasks.investigation import create_pending_investigation, run_investigation_task
+from app.services.investigations import create_pending_investigation
+from app.workers.tasks.investigation import run_investigation_task
 
 router = APIRouter(prefix="/rule-analyzer", tags=["rule-analyzer"])
 
