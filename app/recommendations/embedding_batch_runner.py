@@ -23,7 +23,6 @@ from app.recommendations.embedding_service import (
     CHROMA_COLLECTION_NAME,
     EMBEDDING_MODEL_NAME,
     build_embedding_text,
-    get_stale_representations,
     mark_embedded,
 )
 

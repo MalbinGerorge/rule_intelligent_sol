@@ -1,9 +1,13 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, LargeBinary, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.models.customer import Customer
 
 
 class CustomerCredentials(Base):
@@ -15,4 +19,4 @@ class CustomerCredentials(Base):
     token_encrypted: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     rotated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    customer: Mapped["Customer"] = relationship(back_populates="customer")
+    customer: Mapped["Customer"] = relationship(back_populates="credentials")

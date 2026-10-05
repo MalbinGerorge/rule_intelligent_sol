@@ -836,4 +836,5 @@ def build_customer_graph(driver: Driver, db: Session, customer_id: int) -> dict:
         "followed_by_edges": followed_by_count,
         "mitre_edges": mitre_count,
         "refwrite_edges": refwrite_count,
+        "match_count_properties": match_count_count,
     }

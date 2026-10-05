@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 from app.services.qradar_client import QRadarAPIError, QRadarClient
 from app.rule_analyzer.aql_safety import UnsafeAQLError, validate_aql
 from app.rule_analyzer.rule_chain_context import resolve_identifier_to_rule_id
-from app.rule_analyzer.aql_safety import UnsafeAQLError, validate_aql, _resolve_max_days
+from app.rule_analyzer.aql_safety import _resolve_max_days
 
 
 def _format_time_ago(dt: datetime | None) -> str:

@@ -26,7 +26,6 @@ from app.rule_analyzer.llm_provider import LLMProvider
 from app.rule_analyzer.rule_chain_context import format_full_chain_inline
 from app.services.qradar_client import QRadarClient
 from app.rule_analyzer.final_report_schema import FinalReport
-from app.rule_analyzer.report_renderer import render_report
 
 _INVESTIGATION_SYSTEM_PROMPT = """You are continuing your analysis of a QRadar rule, now with access to investigation tools.
 
@@ -162,7 +161,6 @@ def build_nodes(db: Session, customer_id: int, llm_provider: LLMProvider, qradar
     tools = build_tools(db, customer_id, qradar_client)
     tool_map = {t.name: t for t in tools}
     llm_with_tools = llm_provider.get_reasoning_llm().bind_tools(tools)
-    llm_plain = llm_provider.get_reasoning_llm()
 
     def analyze_chain_node(state: InvestigationState) -> InvestigationState:
         formatted = format_full_chain_inline(db, customer_id, state["rule_id"])
