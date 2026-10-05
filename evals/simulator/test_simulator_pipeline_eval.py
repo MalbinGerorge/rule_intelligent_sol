@@ -14,7 +14,7 @@ every narrative, so status should resolve to "ok" on the first pass
 separate concern, tested with mocks, not against a real blocking
 LLM call in a test).
 
-Run: uv run pytest tests/simulator/test_simulator_pipeline_eval.py -v -s
+Run: uv run pytest evals/simulator/test_simulator_pipeline_eval.py -v -s
 """
 from __future__ import annotations
 

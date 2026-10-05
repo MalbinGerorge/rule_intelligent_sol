@@ -27,7 +27,7 @@ Two genuinely different kinds of cases here, on purpose:
     it, and its result becomes the real, measurable proof of
     improvement.
 
-Run: uv run pytest tests/eval/test_rule_retrieval_eval.py -v -s
+Run: uv run pytest evals/retrieval/test_rule_retrieval_eval.py -v -s
 """
 from __future__ import annotations
 
