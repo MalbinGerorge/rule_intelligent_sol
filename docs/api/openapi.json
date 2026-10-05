@@ -1,0 +1,2325 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Rule Intelligent Sol",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/rules": {
+      "get": {
+        "tags": [
+          "rules"
+        ],
+        "summary": "List Rules",
+        "operationId": "list_rules_rules_get",
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "Filter to one customer",
+              "title": "Customer Id"
+            },
+            "description": "Filter to one customer"
+          },
+          {
+            "name": "object_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "RULE or BUILDING_BLOCK",
+              "title": "Object Type"
+            },
+            "description": "RULE or BUILDING_BLOCK"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rules/metrics": {
+      "get": {
+        "tags": [
+          "rules"
+        ],
+        "summary": "Get Health Metrics",
+        "operationId": "get_health_metrics_rules_metrics_get",
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "Filter to one customer",
+              "title": "Customer Id"
+            },
+            "description": "Filter to one customer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleHealthMetrics"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rules/{rule_id}": {
+      "get": {
+        "tags": [
+          "rules"
+        ],
+        "summary": "Get Rule",
+        "operationId": "get_rule_rules__rule_id__get",
+        "parameters": [
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Rule Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/graph/rules/search/by-field": {
+      "get": {
+        "tags": [
+          "graph"
+        ],
+        "summary": "Search Rules By Field",
+        "operationId": "search_rules_by_field_graph_rules_search_by_field_get",
+        "parameters": [
+          {
+            "name": "field",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "e.g. Command",
+              "title": "Field"
+            },
+            "description": "e.g. Command"
+          },
+          {
+            "name": "customer_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Customer Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FieldSearchResult"
+                  },
+                  "title": "Response Search Rules By Field Graph Rules Search By Field Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/graph/rules/search/by-technique": {
+      "get": {
+        "tags": [
+          "graph"
+        ],
+        "summary": "Search Rules By Technique",
+        "operationId": "search_rules_by_technique_graph_rules_search_by_technique_get",
+        "parameters": [
+          {
+            "name": "technique_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "e.g. T1078",
+              "title": "Technique Id"
+            },
+            "description": "e.g. T1078"
+          },
+          {
+            "name": "customer_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Customer Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TechniqueSearchResult"
+                  },
+                  "title": "Response Search Rules By Technique Graph Rules Search By Technique Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/graph/building-blocks/{identifier}/dependents": {
+      "get": {
+        "tags": [
+          "graph"
+        ],
+        "summary": "Get Bb Dependents",
+        "operationId": "get_bb_dependents_graph_building_blocks__identifier__dependents_get",
+        "parameters": [
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Identifier"
+            }
+          },
+          {
+            "name": "customer_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Customer Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BuildingBlockDependent"
+                  },
+                  "title": "Response Get Bb Dependents Graph Building Blocks  Identifier  Dependents Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/graph/rules/{rule_id}": {
+      "get": {
+        "tags": [
+          "graph"
+        ],
+        "summary": "Get Rule Graph",
+        "operationId": "get_rule_graph_graph_rules__rule_id__get",
+        "parameters": [
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Rule Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleGraphDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent/ask": {
+      "post": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Ask",
+        "operationId": "ask_agent_ask_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentAskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentAskResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rule-analyzer/rules/{rule_id}/investigate": {
+      "post": {
+        "tags": [
+          "rule-analyzer"
+        ],
+        "summary": "Start Investigation",
+        "description": "Creates the row immediately (status='running') and pushes the\nreal work onto Redis via .delay() -- returns in milliseconds,\nthe actual investigation runs later, in a separate worker process.",
+        "operationId": "start_investigation_rule_analyzer_rules__rule_id__investigate_post",
+        "parameters": [
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Rule Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestigationCreateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rule-analyzer/investigations/{investigation_id}": {
+      "get": {
+        "tags": [
+          "rule-analyzer"
+        ],
+        "summary": "Get Investigation",
+        "description": "Poll this -- the frontend calls it every ~2s until status is\nno longer 'running'.",
+        "operationId": "get_investigation_rule_analyzer_investigations__investigation_id__get",
+        "parameters": [
+          {
+            "name": "investigation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Investigation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestigationDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rule-analyzer/rules/{rule_id}/investigations": {
+      "get": {
+        "tags": [
+          "rule-analyzer"
+        ],
+        "summary": "List Investigations",
+        "description": "History for one rule, most recent first, paginated -- CONFIRMED\nNECESSARY: without limit/offset, older investigations beyond a\nfixed cap would be permanently unreachable through this endpoint\nonce a rule accumulates enough runs. limit is capped at 100 to\nprevent a single request from pulling an unbounded number of rows.",
+        "operationId": "list_investigations_rule_analyzer_rules__rule_id__investigations_get",
+        "parameters": [
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Rule Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestigationListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recommendations/customers/{customer_name}/sigma/generate": {
+      "post": {
+        "tags": [
+          "recommendations"
+        ],
+        "summary": "Start Sigma Generation",
+        "operationId": "start_sigma_generation_recommendations_customers__customer_name__sigma_generate_post",
+        "parameters": [
+          {
+            "name": "customer_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Customer Name"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SigmaGenerationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SigmaGenerationJobCreateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recommendations/sigma-jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "recommendations"
+        ],
+        "summary": "Get Sigma Job",
+        "operationId": "get_sigma_job_recommendations_sigma_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SigmaGenerationJobDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recommendations/sigma-jobs/{job_id}/stream": {
+      "get": {
+        "tags": [
+          "recommendations"
+        ],
+        "summary": "Stream Sigma Job",
+        "operationId": "stream_sigma_job_recommendations_sigma_jobs__job_id__stream_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recommendations/customers/{customer_name}/mitre-gaps": {
+      "get": {
+        "tags": [
+          "recommendations"
+        ],
+        "summary": "Get Mitre Gaps",
+        "operationId": "get_mitre_gaps_recommendations_customers__customer_name__mitre_gaps_get",
+        "parameters": [
+          {
+            "name": "customer_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Customer Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MitreGap"
+                  },
+                  "title": "Response Get Mitre Gaps Recommendations Customers  Customer Name  Mitre Gaps Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recommendations/customers/{customer_name}/log-source-gaps": {
+      "get": {
+        "tags": [
+          "recommendations"
+        ],
+        "summary": "Get Log Source Gaps",
+        "operationId": "get_log_source_gaps_recommendations_customers__customer_name__log_source_gaps_get",
+        "parameters": [
+          {
+            "name": "customer_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Customer Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LogSourceGap"
+                  },
+                  "title": "Response Get Log Source Gaps Recommendations Customers  Customer Name  Log Source Gaps Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recommendations/embeddings/generate": {
+      "post": {
+        "tags": [
+          "recommendations"
+        ],
+        "summary": "Start Embedding Generation",
+        "operationId": "start_embedding_generation_recommendations_embeddings_generate_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmbeddingJobCreateResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recommendations/embeddings-jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "recommendations"
+        ],
+        "summary": "Get Embedding Job",
+        "operationId": "get_embedding_job_recommendations_embeddings_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmbeddingJobDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recommendations/embeddings-jobs/{job_id}/stream": {
+      "get": {
+        "tags": [
+          "recommendations"
+        ],
+        "summary": "Stream Embedding Job",
+        "operationId": "stream_embedding_job_recommendations_embeddings_jobs__job_id__stream_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recommendations/customers/{customer_name}/similarity-search": {
+      "post": {
+        "tags": [
+          "recommendations"
+        ],
+        "summary": "Similarity Search",
+        "description": "Synchronous -- fast enough (one query embed + one Chroma lookup)\nto run inline, unlike embedding GENERATION which needs Celery.",
+        "operationId": "similarity_search_recommendations_customers__customer_name__similarity_search_post",
+        "parameters": [
+          {
+            "name": "customer_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Customer Name"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimilaritySearchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimilaritySearchResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customers": {
+      "get": {
+        "tags": [
+          "customers"
+        ],
+        "summary": "List Customers",
+        "operationId": "list_customers_customers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AgentAskRequest": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "customer_id": {
+            "type": "integer",
+            "title": "Customer Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question",
+          "customer_id"
+        ],
+        "title": "AgentAskRequest"
+      },
+      "AgentAskResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query"
+          },
+          "rows": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rows"
+          },
+          "retried": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retried"
+          },
+          "question": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "AgentAskResponse"
+      },
+      "BuildingBlockDependent": {
+        "properties": {
+          "rule_id": {
+            "type": "integer",
+            "title": "Rule Id"
+          },
+          "identifier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identifier"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "threshold": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Threshold"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rule_id",
+          "identifier",
+          "name",
+          "threshold"
+        ],
+        "title": "BuildingBlockDependent"
+      },
+      "CustomerListResponse": {
+        "properties": {
+          "customers": {
+            "items": {
+              "$ref": "#/components/schemas/CustomerSummary"
+            },
+            "type": "array",
+            "title": "Customers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "customers"
+        ],
+        "title": "CustomerListResponse"
+      },
+      "CustomerSummary": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "CustomerSummary"
+      },
+      "EmbeddingJobCreateResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "total_representations": {
+            "type": "integer",
+            "title": "Total Representations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "total_representations"
+        ],
+        "title": "EmbeddingJobCreateResponse"
+      },
+      "EmbeddingJobDetail": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "total_representations": {
+            "type": "integer",
+            "title": "Total Representations"
+          },
+          "processed_representations": {
+            "type": "integer",
+            "title": "Processed Representations"
+          },
+          "failed_representations": {
+            "type": "integer",
+            "title": "Failed Representations"
+          },
+          "failed_details": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failed Details"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "total_representations",
+          "processed_representations",
+          "failed_representations",
+          "created_at"
+        ],
+        "title": "EmbeddingJobDetail"
+      },
+      "FieldSearchResult": {
+        "properties": {
+          "rule_id": {
+            "type": "integer",
+            "title": "Rule Id"
+          },
+          "identifier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identifier"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "operator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator"
+          },
+          "values": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Values"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rule_id",
+          "identifier",
+          "name",
+          "operator",
+          "values"
+        ],
+        "title": "FieldSearchResult"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "InvestigationCreateResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status"
+        ],
+        "title": "InvestigationCreateResponse"
+      },
+      "InvestigationDetail": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "rule_id": {
+            "type": "integer",
+            "title": "Rule Id"
+          },
+          "customer_id": {
+            "type": "integer",
+            "title": "Customer Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "chain_analysis": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chain Analysis"
+          },
+          "final_report": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Report"
+          },
+          "rendered_report": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rendered Report"
+          },
+          "trace": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace"
+          },
+          "tool_calls_made": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Calls Made"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "rule_id",
+          "customer_id",
+          "status",
+          "created_at"
+        ],
+        "title": "InvestigationDetail"
+      },
+      "InvestigationListItem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "tool_calls_made": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Calls Made"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "created_at"
+        ],
+        "title": "InvestigationListItem"
+      },
+      "InvestigationListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InvestigationListItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "InvestigationListResponse"
+      },
+      "LogSourceGap": {
+        "properties": {
+          "log_source_type_name": {
+            "type": "string",
+            "title": "Log Source Type Name"
+          },
+          "qradar_type_id": {
+            "type": "integer",
+            "title": "Qradar Type Id"
+          },
+          "peer_customer_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Peer Customer Names"
+          },
+          "suggested_rules": {
+            "items": {
+              "$ref": "#/components/schemas/PeerRuleSuggestion"
+            },
+            "type": "array",
+            "title": "Suggested Rules"
+          }
+        },
+        "type": "object",
+        "required": [
+          "log_source_type_name",
+          "qradar_type_id",
+          "peer_customer_names",
+          "suggested_rules"
+        ],
+        "title": "LogSourceGap"
+      },
+      "MitreGap": {
+        "properties": {
+          "technique_id": {
+            "type": "string",
+            "title": "Technique Id"
+          },
+          "technique_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technique Name"
+          },
+          "tactic_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tactic Names"
+          },
+          "is_subtechnique": {
+            "type": "boolean",
+            "title": "Is Subtechnique"
+          },
+          "peer_customer_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Peer Customer Names"
+          },
+          "suggested_rules": {
+            "items": {
+              "$ref": "#/components/schemas/PeerRuleSuggestion"
+            },
+            "type": "array",
+            "title": "Suggested Rules"
+          }
+        },
+        "type": "object",
+        "required": [
+          "technique_id",
+          "technique_name",
+          "tactic_names",
+          "is_subtechnique",
+          "peer_customer_names",
+          "suggested_rules"
+        ],
+        "title": "MitreGap"
+      },
+      "PeerRuleSuggestion": {
+        "properties": {
+          "source_customer_name": {
+            "type": "string",
+            "title": "Source Customer Name"
+          },
+          "rule_id": {
+            "type": "integer",
+            "title": "Rule Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level"
+          },
+          "detection": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Detection"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "mitre_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mitre Source"
+          },
+          "mitre_confidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mitre Confidence"
+          },
+          "required_log_source_types": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Required Log Source Types",
+            "default": []
+          },
+          "customer_has_required_log_source": {
+            "type": "boolean",
+            "title": "Customer Has Required Log Source",
+            "default": true
+          },
+          "similarity_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Similarity Score"
+          },
+          "embedding_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Score"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_customer_name",
+          "rule_id",
+          "title",
+          "description",
+          "level",
+          "detection",
+          "tags"
+        ],
+        "title": "PeerRuleSuggestion"
+      },
+      "RuleGraphDetail": {
+        "properties": {
+          "rule": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Rule"
+          },
+          "references": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "References"
+          },
+          "conditions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Conditions"
+          },
+          "log_sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Log Sources"
+          },
+          "mitre": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Mitre"
+          },
+          "followed_by": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Followed By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rule",
+          "references",
+          "conditions",
+          "log_sources",
+          "mitre",
+          "followed_by"
+        ],
+        "title": "RuleGraphDetail"
+      },
+      "RuleHealthMetrics": {
+        "properties": {
+          "total_rules": {
+            "type": "integer",
+            "title": "Total Rules"
+          },
+          "total_building_blocks": {
+            "type": "integer",
+            "title": "Total Building Blocks"
+          },
+          "enabled_rules": {
+            "type": "integer",
+            "title": "Enabled Rules"
+          },
+          "disabled_rules": {
+            "type": "integer",
+            "title": "Disabled Rules"
+          },
+          "enabled_triggered": {
+            "type": "integer",
+            "title": "Enabled Triggered"
+          },
+          "enabled_not_triggered": {
+            "type": "integer",
+            "title": "Enabled Not Triggered"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_rules",
+          "total_building_blocks",
+          "enabled_rules",
+          "disabled_rules",
+          "enabled_triggered",
+          "enabled_not_triggered"
+        ],
+        "title": "RuleHealthMetrics"
+      },
+      "RuleListResponse": {
+        "properties": {
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/RuleSummary"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "count",
+          "results"
+        ],
+        "title": "RuleListResponse"
+      },
+      "RuleSummary": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "customer_id": {
+            "type": "integer",
+            "title": "Customer Id"
+          },
+          "qradar_rule_id": {
+            "type": "integer",
+            "title": "Qradar Rule Id"
+          },
+          "identifier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identifier"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "object_type": {
+            "type": "string",
+            "title": "Object Type"
+          },
+          "building_block_subtype": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Building Block Subtype"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner"
+          },
+          "origin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "last_event_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Event At"
+          },
+          "last_event_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Event Count"
+          },
+          "last_offense_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Offense Id"
+          },
+          "tactics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tactics"
+          },
+          "techniques": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Techniques"
+          },
+          "sub_techniques": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sub Techniques"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "customer_id",
+          "qradar_rule_id",
+          "identifier",
+          "name",
+          "object_type",
+          "building_block_subtype",
+          "type",
+          "enabled",
+          "owner",
+          "origin",
+          "created_at",
+          "updated_at",
+          "last_event_at",
+          "last_event_count",
+          "last_offense_id",
+          "tactics",
+          "techniques",
+          "sub_techniques"
+        ],
+        "title": "RuleSummary",
+        "description": "One row from the rule_summary view. from_attributes lets this be\nbuilt directly from a SQLAlchemy Row/mapping without manual field-by-field\nconstruction."
+      },
+      "SigmaGenerationJobCreateResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "total_rules": {
+            "type": "integer",
+            "title": "Total Rules"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "total_rules"
+        ],
+        "title": "SigmaGenerationJobCreateResponse"
+      },
+      "SigmaGenerationJobDetail": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "customer_id": {
+            "type": "integer",
+            "title": "Customer Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "requested_rule_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Rule Names"
+          },
+          "total_rules": {
+            "type": "integer",
+            "title": "Total Rules"
+          },
+          "processed_rules": {
+            "type": "integer",
+            "title": "Processed Rules"
+          },
+          "failed_rules": {
+            "type": "integer",
+            "title": "Failed Rules"
+          },
+          "failed_rule_details": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failed Rule Details"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "customer_id",
+          "status",
+          "total_rules",
+          "processed_rules",
+          "failed_rules",
+          "created_at"
+        ],
+        "title": "SigmaGenerationJobDetail"
+      },
+      "SigmaGenerationRequest": {
+        "properties": {
+          "rule_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Names",
+            "description": "Specific rule names to generate for. Omit or leave null to generate for ALL canonical rules.",
+            "examples": [
+              null
+            ]
+          }
+        },
+        "type": "object",
+        "title": "SigmaGenerationRequest"
+      },
+      "SimilaritySearchRequest": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Query"
+          }
+        },
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "title": "SimilaritySearchRequest"
+      },
+      "SimilaritySearchResult": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/PeerRuleSuggestion"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "excluded_low_relevance": {
+            "type": "integer",
+            "title": "Excluded Low Relevance"
+          }
+        },
+        "type": "object",
+        "required": [
+          "results",
+          "excluded_low_relevance"
+        ],
+        "title": "SimilaritySearchResult",
+        "description": "Wraps the real suggestions alongside HOW MANY genuine\ncandidates were found but excluded as insufficiently relevant --\nlets the UI be honest about \"we looked, found some, but they\nweren't good enough\" rather than silently returning fewer results\nwith no explanation."
+      },
+      "TechniqueSearchResult": {
+        "properties": {
+          "rule_id": {
+            "type": "integer",
+            "title": "Rule Id"
+          },
+          "identifier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identifier"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rule_id",
+          "identifier",
+          "name"
+        ],
+        "title": "TechniqueSearchResult"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
