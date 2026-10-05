@@ -1,8 +1,9 @@
 """Shared pytest fixtures.
 
 Tests NEVER touch the development database. Before any `app` module is
-imported, POSTGRES_DB_NAME is pointed at a separate test database
-(TEST_POSTGRES_DB_NAME, default "rule_intelligent_sol_test"). At session
+imported, POSTGRES_DB_NAME is pointed at a separate test database on the
+same Postgres server (TEST_POSTGRES_DB_NAME from the environment, else
+from .env, else "rule_intelligent_sol_test"). At session
 start that database is dropped, recreated and migrated with
 `alembic upgrade head` -- the same migrations a real deployment runs, so
 views and tables without ORM models exist too, and a broken migration
@@ -16,9 +17,20 @@ live in evals/ instead and are run by hand, not by `pytest`.
 """
 import os
 
-TEST_DB_NAME = os.environ.get("TEST_POSTGRES_DB_NAME", "rule_intelligent_sol_test")
+from dotenv import dotenv_values
+
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# os.environ only sees real environment variables, not .env -- so check
+# both, in the same order pydantic-settings uses (environment wins).
+TEST_DB_NAME = (
+    os.environ.get("TEST_POSTGRES_DB_NAME")
+    or dotenv_values(os.path.join(REPO_ROOT, ".env")).get("TEST_POSTGRES_DB_NAME")
+    or "rule_intelligent_sol_test"
+)
 # Must happen before `app` is imported: settings are read once, at import.
-# Environment variables take precedence over values in .env.
+# Environment variables take precedence over values in .env, so this
+# overrides .env's POSTGRES_DB_NAME for this pytest process only.
 os.environ["POSTGRES_DB_NAME"] = TEST_DB_NAME
 
 import pytest
@@ -28,8 +40,6 @@ from sqlalchemy import create_engine, text
 
 from app.core.config import settings
 from app.db.session import engine
-
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def _assert_is_test_database() -> None:
