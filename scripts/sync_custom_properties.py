@@ -19,8 +19,8 @@ import argparse
 from sqlalchemy import text
 
 from app.db.session import engine
+from app.ingestion.jobs.custom_property_sync import sync_custom_event_properties
 from app.integrations.qradar.client_factory import build_qradar_client_for_customer
-from app.services.custom_property_sync import sync_custom_event_properties
 
 
 def main() -> None:

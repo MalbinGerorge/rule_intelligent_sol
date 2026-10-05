@@ -18,7 +18,7 @@ import json
 from sqlalchemy import text
 
 from app.db.session import engine
-from app.services.rule_condition_parser import parse_rule_conditions
+from app.ingestion.parsers.rule_condition import parse_rule_conditions
 
 
 def main() -> None:

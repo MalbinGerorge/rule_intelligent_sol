@@ -15,7 +15,7 @@ import argparse
 from sqlalchemy import text
 
 from app.db.session import engine
-from app.graph.loader import build_customer_graph
+from app.ingestion.jobs.graph_build import build_customer_graph
 from app.integrations.neo4j.client import close_driver, get_driver
 
 

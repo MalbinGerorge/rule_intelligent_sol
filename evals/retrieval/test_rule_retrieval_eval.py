@@ -43,9 +43,9 @@ import structlog
 from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
+from app.ai.retrieval.similarity_search import SimilaritySearchService
 from app.core.logging import configure_logging
 from app.db.session import engine
-from app.recommendations.similarity_search import SimilaritySearchService
 
 logger = structlog.get_logger("eval.rule_retrieval")
 

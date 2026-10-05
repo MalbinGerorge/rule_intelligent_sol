@@ -45,9 +45,9 @@ celery_app = Celery(
     # worker needs to be explicitly told which module(s) to import so
     # it actually discovers and registers the tasks defined there.
     include=[
-        "app.services.investigation_runner",
-        "app.recommendations.sigma_batch_runner",
-        "app.recommendations.embedding_batch_runner",
+        "app.workers.tasks.investigation",
+        "app.workers.tasks.sigma",
+        "app.workers.tasks.embeddings",
     ],
 )
 

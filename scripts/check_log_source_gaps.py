@@ -20,7 +20,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.db.session import engine
 from app.integrations.neo4j.client import close_driver, get_driver
-from app.recommendations.log_source_gap_analyzer import LogSourceGapAnalyzer
+from app.services.gap_analysis.log_source import LogSourceGapAnalyzer
 
 
 def main() -> None:

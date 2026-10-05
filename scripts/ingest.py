@@ -24,16 +24,16 @@ from sqlalchemy import text
 
 from app.core.config import settings
 from app.db.session import engine
-from app.integrations.qradar.client import QRadarAPIError, QRadarClient
-from app.services.log_source_ingest import upsert_log_sources_reference
-from app.services.log_source_type_ingest import upsert_log_source_types_reference
-from app.services.mitre_mapping_ingest import upsert_mitre_mappings
-from app.services.offense_contribution_ingest import upsert_offense_contributions
-from app.services.rule_ingest import (
+from app.ingestion.jobs.log_source_ingest import upsert_log_sources_reference
+from app.ingestion.jobs.log_source_type_ingest import upsert_log_source_types_reference
+from app.ingestion.jobs.mitre_mapping_ingest import upsert_mitre_mappings
+from app.ingestion.jobs.offense_contribution_ingest import upsert_offense_contributions
+from app.ingestion.jobs.rule_ingest import (
     upsert_building_blocks_reference,
     upsert_rules,
     upsert_rules_reference,
 )
+from app.integrations.qradar.client import QRadarAPIError, QRadarClient
 
 
 def load_customer(name: str) -> dict:

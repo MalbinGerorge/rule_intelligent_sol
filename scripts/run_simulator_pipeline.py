@@ -18,12 +18,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
-from app.agent.simulator.attack_interpreter import AttackInterpreterAgent
-from app.agent.simulator.dsm_property_extractor_trial import DSMPropertyExtractor
-from app.agent.simulator.interactive_runner import run_interactive
-from app.agent.simulator.mitre_validator import MitreTechniqueValidator
-from app.agent.simulator.orchestrator import SimulatorOrchestrator
-from app.agent.simulator.reference_log_retriever import ReferenceLogRetriever
+from app.ai.agents.simulator.attack_interpreter import AttackInterpreterAgent
+from app.ai.agents.simulator.dsm_property_extractor_trial import DSMPropertyExtractor
+from app.ai.agents.simulator.interactive_runner import run_interactive
+from app.ai.agents.simulator.mitre_validator import MitreTechniqueValidator
+from app.ai.agents.simulator.orchestrator import SimulatorOrchestrator
+from app.ai.agents.simulator.reference_log_retriever import ReferenceLogRetriever
 from app.ai.llm.provider import LLMProvider
 from app.core.logging import configure_logging, configure_simulator_logging
 from app.db.session import engine

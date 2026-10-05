@@ -20,7 +20,7 @@ import argparse
 from sqlalchemy import text
 
 from app.db.session import engine
-from app.services.validation import validate_building_blocks, validate_rules
+from app.ingestion.jobs.validation import validate_building_blocks, validate_rules
 
 
 def main() -> None:
