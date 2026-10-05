@@ -1,0 +1,11 @@
+# Known findings that are accepted, one gitleaks fingerprint per line
+# (commit:file:rule:line). Every entry needs a reason. New findings still
+# fail CI -- only these exact historical occurrences are ignored.
+#
+# Local-development Postgres/Neo4j password hardcoded before PR #4
+# (2026-10-04). It only ever protected local Docker containers, is treated
+# as public, and was removed from all tracked files. History was not
+# rewritten (see PR #4). Do not reuse this password anywhere.
+738d2c46470db245c4fcbbae5b378f389bc6c5fa:docker-compose.yml:hardcoded-password:31
+f746a4c8d7c754cc9705c82bdcbc2ea55ba8828b:app/core/config.py:hardcoded-password:42
+f746a4c8d7c754cc9705c82bdcbc2ea55ba8828b:docker-compose.yml:hardcoded-password:13

@@ -1,0 +1,47 @@
+# gitleaks configuration: secret scanning for local runs and CI.
+# Docs: https://github.com/gitleaks/gitleaks#configuration
+
+title = "rule_intelligent_sol"
+
+# Keep all of gitleaks' built-in rules (cloud keys, tokens, private keys,
+# high-entropy strings, ...) and add the project-specific rule below.
+[extend]
+useDefault = true
+
+# The built-in rules look for known token formats and random-looking
+# strings, so a human-chosen password like the one that leaked into this
+# repo's history goes undetected. This rule catches a literal value
+# assigned to a password-like key in code, YAML, .env or compose files.
+#   key:    anything ending in password/passwd, or NEO4J_AUTH (user/password)
+#   then:   optional quote, optional `: str` type annotation, `:` or `=`
+#   value:  8+ characters on the same line ([ \t] not \s, so an empty
+#           `KEY=` never swallows the next line); `$` excluded so `${VAR}`
+#           references don't count
+[[rules]]
+id = "hardcoded-password"
+description = "Literal password assigned to a password-like key"
+regex = '''(?i)\b(?:[a-z0-9_]*password|[a-z0-9_]*passwd|neo4j_auth)\b["']?(?:[ \t]*:[ \t]*(?:str|bytes))?[ \t]*[:=][ \t]*["']?([^\s"'$(,;)}\]]{8,})'''
+secretGroup = 1
+keywords = ["password", "passwd", "neo4j_auth"]
+
+  # Values that are not secrets: type names, references to other values,
+  # compose's ${VAR:?message} syntax, and the throwaway credentials of
+  # CI's service containers.
+  [[rules.allowlists]]
+  regexTarget = "secret"
+  regexes = [
+    '''^(?:SecretStr|Optional|str|bytes)\b''',
+    '''^\?''',
+    '''^ci-only-''',
+    '''^(?:settings|self|os\.environ)\b''',
+  ]
+
+  # Assigned from a function call, e.g. password = quote_plus(...)
+  [[rules.allowlists]]
+  regexTarget = "line"
+  regexes = ['''(?i)\b[a-z0-9_]*password\b[ \t]*=[ \t]*[A-Za-z_][\w.]*\(''']
+
+# Paths that are never source code or configuration.
+[[allowlists]]
+description = "Downloaded third-party data: large, and scanning it is slow"
+paths = ['''^data/''']
