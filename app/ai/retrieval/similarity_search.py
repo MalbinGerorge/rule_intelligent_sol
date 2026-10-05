@@ -49,8 +49,8 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.ai.retrieval.embedding_service import CHROMA_COLLECTION_NAME, build_embedding_text
+from app.ai.retrieval.models import PeerRuleSuggestion, SimilaritySearchResult
 from app.ai.retrieval.reranker import Reranker
-from app.api.v1.schemas.recommendations import PeerRuleSuggestion, SimilaritySearchResult
 from app.core.config import settings
 
 logger = structlog.get_logger(__name__)
