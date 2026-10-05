@@ -1,4 +1,5 @@
 """Pydantic response schemas for the rules API — mirrors rule_summary."""
+
 from __future__ import annotations
 
 from datetime import datetime

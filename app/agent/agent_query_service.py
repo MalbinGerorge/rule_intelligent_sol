@@ -5,6 +5,7 @@ response shape the API has always used — the API endpoint doesn't need
 to know whether the orchestration underneath is a manual loop or a
 LangGraph graph.
 """
+
 from __future__ import annotations
 
 from neo4j import Driver
@@ -23,12 +24,14 @@ def ask_graph(driver: Driver, question: str, customer_id: int) -> dict:
     """
     try:
         graph = build_agent_graph(driver)
-        final_state = graph.invoke({
-            "question": question,
-            "customer_id": customer_id,
-            "messages": [],
-            "retry_count": 0,
-        })
+        final_state = graph.invoke(
+            {
+                "question": question,
+                "customer_id": customer_id,
+                "messages": [],
+                "retry_count": 0,
+            }
+        )
     except Exception as e:
         return {"status": "llm_error", "error": str(e)}
 

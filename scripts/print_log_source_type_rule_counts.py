@@ -9,8 +9,10 @@ genuine coverage, or a silent name mismatch between the two systems.
 Usage:
     uv run python scripts/print_log_source_type_rule_counts.py --name cotecna
 """
+
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import argparse
@@ -18,7 +20,7 @@ import argparse
 from sqlalchemy import text
 
 from app.db.session import engine
-from app.graph.client import get_driver, close_driver
+from app.graph.client import close_driver, get_driver
 
 
 def main() -> None:
@@ -34,9 +36,10 @@ def main() -> None:
             raise SystemExit(f"No customer named '{args.name}'.")
 
         # SAME query LogSourceGapAnalyzer._get_onboarded_log_source_types uses
-        onboarded = conn.execute(
-            text(
-                """
+        onboarded = (
+            conn.execute(
+                text(
+                    """
                 SELECT DISTINCT lstr.qradar_type_id, lstr.name
                 FROM log_sources_reference lsr
                 JOIN log_source_types_reference lstr
@@ -47,14 +50,19 @@ def main() -> None:
                   AND lstr.name IS NOT NULL
                 ORDER BY lstr.name
                 """
-            ),
-            {"customer_id": customer_id},
-        ).mappings().all()
+                ),
+                {"customer_id": customer_id},
+            )
+            .mappings()
+            .all()
+        )
 
     driver = get_driver()
     try:
         with driver.session() as session:
-            print(f"\n{args.name}: {len(onboarded)} onboarded log source type(s) (from log_sources_reference)\n")
+            print(
+                f"\n{args.name}: {len(onboarded)} onboarded log source type(s) (from log_sources_reference)\n"
+            )
             for row in onboarded:
                 result = session.run(
                     """
@@ -67,7 +75,9 @@ def main() -> None:
                 )
                 rule_count = result.single()["rule_count"]
                 flag = "" if rule_count > 0 else "  <-- GAP (0 rule coverage)"
-                print(f"  type_id={row['qradar_type_id']:<6} rules={rule_count:<4} {row['name']}{flag}")
+                print(
+                    f"  type_id={row['qradar_type_id']:<6} rules={rule_count:<4} {row['name']}{flag}"
+                )
     finally:
         close_driver()
 

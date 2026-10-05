@@ -14,6 +14,7 @@ NEVER fabricates a sample. source='not_found' is an honest, expected
 outcome -- not an error. When nothing matches exactly, a broader
 search surfaces real PARTIAL matches as available_alternatives.
 """
+
 from __future__ import annotations
 
 import json
@@ -45,7 +46,9 @@ class ReferenceLogRetriever:
         matched = self._find_exact_match(all_sources, step.target_log_source, step.target_server)
 
         if matched is None:
-            alternatives = self._find_alternatives(all_sources, step.target_log_source, step.target_server)
+            alternatives = self._find_alternatives(
+                all_sources, step.target_log_source, step.target_server
+            )
             logger.warning(
                 "reference_log_no_match",
                 target_log_source=step.target_log_source,
@@ -154,11 +157,18 @@ class ReferenceLogRetriever:
             results = self.client.run_ariel_search(aql)
         except QRadarAPIError as exc:
             logger.warning(
-                "reference_log_query_failed", log_source_name=log_source.get("name"), aql=aql, error=str(exc)
+                "reference_log_query_failed",
+                log_source_name=log_source.get("name"),
+                aql=aql,
+                error=str(exc),
             )
             return []
 
         events = results.get("events") or results.get("results") or []
         if not events:
-            logger.info("reference_log_raw_response_empty", raw_response_keys=list(results.keys()), raw_response=results)
+            logger.info(
+                "reference_log_raw_response_empty",
+                raw_response_keys=list(results.keys()),
+                raw_response=results,
+            )
         return events

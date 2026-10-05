@@ -5,6 +5,7 @@ progress/results. A full investigation can take 30s-2+ minutes, so
 this deliberately never blocks an HTTP request waiting for it to
 finish -- see app/celery_app.py for the full reasoning.
 """
+
 from __future__ import annotations
 
 import json
@@ -46,11 +47,17 @@ def start_investigation(rule_id: int, db: Session = Depends(get_db)):
 def get_investigation(investigation_id: int, db: Session = Depends(get_db)):
     """Poll this -- the frontend calls it every ~2s until status is
     no longer 'running'."""
-    row = db.execute(
-        text("SELECT * FROM investigation_reports WHERE id = :id"), {"id": investigation_id}
-    ).mappings().first()
+    row = (
+        db.execute(
+            text("SELECT * FROM investigation_reports WHERE id = :id"), {"id": investigation_id}
+        )
+        .mappings()
+        .first()
+    )
     if row is None:
-        raise HTTPException(status_code=404, detail=f"No investigation found with id {investigation_id}")
+        raise HTTPException(
+            status_code=404, detail=f"No investigation found with id {investigation_id}"
+        )
 
     data = dict(row)
     for field in ("chain_analysis", "final_report"):
@@ -73,21 +80,26 @@ def list_investigations(
     once a rule accumulates enough runs. limit is capped at 100 to
     prevent a single request from pulling an unbounded number of rows."""
     total = db.execute(
-        text("SELECT count(*) FROM investigation_reports WHERE rule_id = :rule_id"), {"rule_id": rule_id}
+        text("SELECT count(*) FROM investigation_reports WHERE rule_id = :rule_id"),
+        {"rule_id": rule_id},
     ).scalar_one()
 
-    rows = db.execute(
-        text(
-            """
+    rows = (
+        db.execute(
+            text(
+                """
             SELECT id, status, tool_calls_made, created_at
             FROM investigation_reports
             WHERE rule_id = :rule_id
             ORDER BY created_at DESC
             LIMIT :limit OFFSET :offset
             """
-        ),
-        {"rule_id": rule_id, "limit": limit, "offset": offset},
-    ).mappings().all()
+            ),
+            {"rule_id": rule_id, "limit": limit, "offset": offset},
+        )
+        .mappings()
+        .all()
+    )
 
     return InvestigationListResponse(
         items=[InvestigationListItem(**dict(r)) for r in rows],

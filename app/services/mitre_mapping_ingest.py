@@ -10,6 +10,7 @@ techniques dict still gets one row (technique_id = '', a real comparable
 value rather than NULL, so the unique constraint / ON CONFLICT dedup
 actually works on re-ingestion).
 """
+
 from __future__ import annotations
 
 import json
@@ -21,7 +22,7 @@ from sqlalchemy.orm import Session
 def parse_mitre_coverage(raw: dict) -> list[dict]:
     """Flattens one rule's mitre_coverage payload into row dicts."""
     rows = []
-    for rule_name_key, rule_data in raw.items():
+    for rule_data in raw.values():
         mapping = rule_data.get("mapping", {})
         if not mapping:
             continue  # no coverage at all for this rule — no rows, which is correct
@@ -50,7 +51,9 @@ def parse_mitre_coverage(raw: dict) -> list[dict]:
     return rows
 
 
-def upsert_mitre_mappings(session: Session, customer_id: int, results: list[dict]) -> tuple[int, int]:
+def upsert_mitre_mappings(
+    session: Session, customer_id: int, results: list[dict]
+) -> tuple[int, int]:
     """Returns (upserted_row_count, skipped_no_matching_rule_count)."""
     upserted = 0
     skipped = 0
@@ -61,7 +64,9 @@ def upsert_mitre_mappings(session: Session, customer_id: int, results: list[dict
             continue  # a failed/errored fetch — nothing to ingest for this identifier
 
         local_rule_id = session.execute(
-            text("SELECT id FROM rules WHERE customer_id = :customer_id AND identifier = :identifier"),
+            text(
+                "SELECT id FROM rules WHERE customer_id = :customer_id AND identifier = :identifier"
+            ),
             {"customer_id": customer_id, "identifier": identifier},
         ).scalar_one_or_none()
 

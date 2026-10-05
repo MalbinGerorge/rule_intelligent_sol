@@ -27,8 +27,10 @@ customer's own Custom Event Properties. Resolving it needs ingesting
 each customer's Custom Event Property list (a separate, later piece
 of work) -- stored as a bare number for now so nothing is lost.
 """
-from alembic import op
+
 import sqlalchemy as sa
+
+from alembic import op
 
 revision = "852bbc4dadf2"
 down_revision = "b53430f4243a"
@@ -40,7 +42,13 @@ def upgrade() -> None:
     op.create_table(
         "rule_responses",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("rule_id", sa.Integer(), sa.ForeignKey("rules.id", ondelete="CASCADE"), nullable=False, unique=True),
+        sa.Column(
+            "rule_id",
+            sa.Integer(),
+            sa.ForeignKey("rules.id", ondelete="CASCADE"),
+            nullable=False,
+            unique=True,
+        ),
         sa.Column("event_name", sa.Text(), nullable=True),
         sa.Column("event_description", sa.Text(), nullable=True),
         sa.Column("severity", sa.Integer(), nullable=True),
@@ -61,7 +69,9 @@ def upgrade() -> None:
         sa.Column("limiter_interval_count", sa.Integer(), nullable=True),
         sa.Column("limiter_interval_type", sa.Text(), nullable=True),
         sa.Column("limiter_host_type", sa.Text(), nullable=True),
-        sa.Column("synced_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "synced_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
     )
     op.create_index("ix_rule_responses_rule_id", "rule_responses", ["rule_id"])
 

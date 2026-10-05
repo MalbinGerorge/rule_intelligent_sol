@@ -27,8 +27,10 @@ refresh is simple, uniform, and correctly handles deletions on the
 QRadar side too (which pure modification-date comparison alone would
 never catch).
 """
-from alembic import op
+
 import sqlalchemy as sa
+
+from alembic import op
 
 revision = "ea8c6f14d460"
 down_revision = "852bbc4dadf2"
@@ -40,7 +42,12 @@ def upgrade() -> None:
     op.create_table(
         "custom_event_properties",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("customer_id", sa.Integer(), sa.ForeignKey("customers.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "customer_id",
+            sa.Integer(),
+            sa.ForeignKey("customers.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("qradar_identifier", sa.Text(), nullable=False),  # QRadar's own UUID identifier
         sa.Column("name", sa.Text(), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
@@ -50,8 +57,14 @@ def upgrade() -> None:
         sa.Column("locale", sa.Text(), nullable=True),
         sa.Column("auto_discovered", sa.Boolean(), nullable=True),
         sa.Column("username", sa.Text(), nullable=True),  # owner in QRadar
-        sa.Column("synced_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.UniqueConstraint("customer_id", "qradar_identifier", name="uq_custom_event_properties_customer_identifier"),
+        sa.Column(
+            "synced_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.UniqueConstraint(
+            "customer_id",
+            "qradar_identifier",
+            name="uq_custom_event_properties_customer_identifier",
+        ),
     )
     op.create_index(
         "ix_custom_event_properties_customer_id", "custom_event_properties", ["customer_id"]
@@ -81,7 +94,9 @@ def upgrade() -> None:
         # for nvp. Same "one flexible JSON column absorbs shape variation"
         # pattern as rule_conditions.structured_data.
         sa.Column("type_specific_data", sa.dialects.postgresql.JSONB(), nullable=True),
-        sa.Column("synced_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "synced_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
     )
     op.create_index(
         "ix_custom_event_property_expressions_property_id",
@@ -96,8 +111,14 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_custom_event_property_expressions_log_source_type_id", table_name="custom_event_property_expressions")
-    op.drop_index("ix_custom_event_property_expressions_property_id", table_name="custom_event_property_expressions")
+    op.drop_index(
+        "ix_custom_event_property_expressions_log_source_type_id",
+        table_name="custom_event_property_expressions",
+    )
+    op.drop_index(
+        "ix_custom_event_property_expressions_property_id",
+        table_name="custom_event_property_expressions",
+    )
     op.drop_table("custom_event_property_expressions")
     op.drop_index("ix_custom_event_properties_customer_id", table_name="custom_event_properties")
     op.drop_table("custom_event_properties")

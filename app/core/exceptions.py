@@ -14,6 +14,7 @@ from): a StaleVersionError / optimistic-locking exception -- this
 project has no version-column concurrency control anywhere yet. Add
 it only if that's genuinely introduced later, not speculatively now.
 """
+
 from __future__ import annotations
 
 from fastapi import status
@@ -61,6 +62,7 @@ class ConflictError(APIError):
     exception_handlers.py, so most callers won't need to raise this
     directly -- it's here for cases where YOUR code notices a
     conflict before the database would."""
+
     status_code = status.HTTP_409_CONFLICT
     code = "conflict"
     title = "Conflict"

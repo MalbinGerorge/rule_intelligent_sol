@@ -15,11 +15,15 @@ class RuleReference(Base):
 
     __tablename__ = "rules_reference"
     __table_args__ = (
-        UniqueConstraint("customer_id", "qradar_rule_id", name="uq_rules_reference_customer_ruleid"),
+        UniqueConstraint(
+            "customer_id", "qradar_rule_id", name="uq_rules_reference_customer_ruleid"
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True)
+    customer_id: Mapped[int] = mapped_column(
+        ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     qradar_rule_id: Mapped[int] = mapped_column(BigInteger, nullable=False)  # QRadar's numeric "id"
     identifier: Mapped[str | None] = mapped_column(Text, index=True)
     name: Mapped[str | None] = mapped_column(Text)

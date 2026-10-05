@@ -13,9 +13,10 @@ ask_user is injectable -- defaults to the real terminal input(), but
 can be swapped for a test stub, or later, a web UI's own question/
 answer mechanism (this loop's logic doesn't care which).
 """
+
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
 import structlog
 

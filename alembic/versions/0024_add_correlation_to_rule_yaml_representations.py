@@ -12,9 +12,11 @@ single Sigma detection block. Real Sigma requires TWO separate linked
 documents: a "base" detection rule (given a `name`) and a `correlation`
 rule referencing it by that name.
 """
-from alembic import op
+
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 revision = "202608241719"
 down_revision = "202608211535"
@@ -27,8 +29,12 @@ def upgrade() -> None:
         "rule_yaml_representations",
         sa.Column("role", sa.Text(), nullable=False, server_default="standalone"),
     )
-    op.add_column("rule_yaml_representations", sa.Column("rule_reference_name", sa.Text(), nullable=True))
-    op.add_column("rule_yaml_representations", sa.Column("correlation", postgresql.JSONB(), nullable=True))
+    op.add_column(
+        "rule_yaml_representations", sa.Column("rule_reference_name", sa.Text(), nullable=True)
+    )
+    op.add_column(
+        "rule_yaml_representations", sa.Column("correlation", postgresql.JSONB(), nullable=True)
+    )
     op.create_index("ix_rule_yaml_representations_role", "rule_yaml_representations", ["role"])
 
 

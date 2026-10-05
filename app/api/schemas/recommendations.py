@@ -1,5 +1,6 @@
 """Response/request schemas for the Sigma generation batch API,
 gap-analysis results, and similarity search results."""
+
 from __future__ import annotations
 
 from pydantic import BaseModel, Field
@@ -43,10 +44,16 @@ class PeerRuleSuggestion(BaseModel):
     tags: list[str]
     mitre_source: str | None = None  # 'confirmed' | 'derived' -- only populated by MitreGapAnalyzer
     mitre_confidence: str | None = None  # only populated when mitre_source == 'derived'
-    required_log_source_types: list[str] = []  # the PEER rule's real REQUIRES_LOGSOURCE_TYPE targets
+    required_log_source_types: list[
+        str
+    ] = []  # the PEER rule's real REQUIRES_LOGSOURCE_TYPE targets
     customer_has_required_log_source: bool = True  # can the RECEIVING customer actually use this? True if unknown (no edges) -- never falsely blocks
-    similarity_score: float | None = None  # FINAL, trusted score -- reranked when reranking runs, raw embedding score otherwise
-    embedding_score: float | None = None  # the RAW embedding-only score, always populated by similarity search -- lets you compare pre/post-rerank
+    similarity_score: float | None = (
+        None  # FINAL, trusted score -- reranked when reranking runs, raw embedding score otherwise
+    )
+    embedding_score: float | None = (
+        None  # the RAW embedding-only score, always populated by similarity search -- lets you compare pre/post-rerank
+    )
 
 
 class LogSourceGap(BaseModel):

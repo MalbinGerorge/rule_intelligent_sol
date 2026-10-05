@@ -12,6 +12,7 @@ appear in app.log -- keeps the two logs genuinely separate, so
 reviewing simulator behavior (agent reasoning, timing, tool calls)
 never requires filtering it out of unrelated application noise.
 """
+
 from __future__ import annotations
 
 import logging

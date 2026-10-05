@@ -8,35 +8,46 @@ HOW LONG -- rather than opaque. NOTE: this only helps DIAGNOSE a
 hang (you'll see it stuck on rule X); it can't recover from a true
 infinite loop (e.g. circular BB references) -- only Ctrl+C can.
 """
-import sys
+
 import os
+import sys
 import time
 from datetime import datetime
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 CUSTOMER_NAME = "cotecna"
 os.environ["LANGCHAIN_PROJECT"] = f"{CUSTOMER_NAME}-sigma-generation"
 
 from sqlalchemy import text
+
 from app.db.session import engine
+from app.recommendations.sigma_generator import SigmaGenerator
 from app.rule_analyzer.llm_provider import LLMProvider
 from app.services.rule_query import list_canonical_rules
-from app.recommendations.sigma_generator import SigmaGenerator
 
-FAILURE_LOG_PATH = Path(__file__).resolve().parent.parent / "app" / "recommendations" / "sigma_batch_failures.md"
+FAILURE_LOG_PATH = (
+    Path(__file__).resolve().parent.parent / "app" / "recommendations" / "sigma_batch_failures.md"
+)
 
 with engine.connect() as read_db:
-    customer_id = read_db.execute(text("SELECT id FROM customers WHERE name = :n"), {"n": CUSTOMER_NAME}).scalar_one()
+    customer_id = read_db.execute(
+        text("SELECT id FROM customers WHERE name = :n"), {"n": CUSTOMER_NAME}
+    ).scalar_one()
     all_rules = list_canonical_rules(read_db, customer_id)
     already_done = {
-        r[0] for r in read_db.execute(
-            text("SELECT DISTINCT rule_id FROM rule_yaml_representations WHERE customer_id = :c"), {"c": customer_id}
+        r[0]
+        for r in read_db.execute(
+            text("SELECT DISTINCT rule_id FROM rule_yaml_representations WHERE customer_id = :c"),
+            {"c": customer_id},
         ).fetchall()
     }
     rules_to_process = [r for r in all_rules if r["id"] not in already_done]
 
-print(f"{len(all_rules)} canonical rules total, {len(already_done)} already done, {len(rules_to_process)} to process now")
+print(
+    f"{len(all_rules)} canonical rules total, {len(already_done)} already done, {len(rules_to_process)} to process now"
+)
 
 provider = LLMProvider()
 generator = SigmaGenerator(provider)
@@ -44,7 +55,11 @@ failures = []
 
 for i, rule in enumerate(rules_to_process, start=1):
     start_ts = datetime.now().strftime("%H:%M:%S")
-    print(f"[{start_ts}] ({i}/{len(rules_to_process)}) Rule {rule['id']}: {rule['name'][:80]} ... ", end="", flush=True)
+    print(
+        f"[{start_ts}] ({i}/{len(rules_to_process)}) Rule {rule['id']}: {rule['name'][:80]} ... ",
+        end="",
+        flush=True,
+    )
     t0 = time.time()
     try:
         with engine.begin() as db:

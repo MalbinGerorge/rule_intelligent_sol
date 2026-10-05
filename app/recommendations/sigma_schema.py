@@ -12,6 +12,7 @@ and correlation rules need a genuinely different, larger set of
 fields (base_* + correlation section) that would make every SIMPLE
 rule's call carry a bunch of irrelevant, always-empty fields if merged.
 """
+
 from __future__ import annotations
 
 from typing import Literal
@@ -20,9 +21,13 @@ from pydantic import BaseModel, Field
 
 
 class SigmaLogsource(BaseModel):
-    category: str | None = Field(None, description="e.g. 'process_creation', 'firewall', 'authentication'")
+    category: str | None = Field(
+        None, description="e.g. 'process_creation', 'firewall', 'authentication'"
+    )
     product: str | None = Field(None, description="e.g. 'windows', 'linux', 'fortigate'")
-    service: str | None = Field(None, description="e.g. 'security', 'sysmon' -- optional, more specific than product")
+    service: str | None = Field(
+        None, description="e.g. 'security', 'sysmon' -- optional, more specific than product"
+    )
 
 
 class SigmaFieldValue(BaseModel):
@@ -31,7 +36,9 @@ class SigmaFieldValue(BaseModel):
         None,
         description="How the value should match, if not exact equality: 'contains', 'startswith', 'endswith', or 're' (regex). Leave null for exact match.",
     )
-    values: list[str] = Field(description="The value(s) being matched -- a list even for a single value")
+    values: list[str] = Field(
+        description="The value(s) being matched -- a list even for a single value"
+    )
 
 
 class SigmaSelection(BaseModel):
@@ -39,6 +46,7 @@ class SigmaSelection(BaseModel):
     objects (SigmaFieldValue), not a dict with arbitrary field names
     -- CONFIRMED NECESSARY: OpenAI's strict structured-output mode
     rejects dynamically-keyed dicts."""
+
     name: str = Field(description="Selection block name, e.g. 'selection', 'filter'")
     field_values: list[SigmaFieldValue]
 
@@ -52,23 +60,29 @@ class SigmaDetection(BaseModel):
 
 class InferredMitreTechnique(BaseModel):
     tactic: str | None = Field(None, description="e.g. 'Credential Access'")
-    technique_id: str = Field(description="e.g. 'T1110', or 'T1110.001' for a specific sub-technique")
+    technique_id: str = Field(
+        description="e.g. 'T1110', or 'T1110.001' for a specific sub-technique"
+    )
     technique_name: str
     confidence: Literal["high", "medium", "low"]
 
 
 # -- Schema 1: SIMPLE rules (one document, no counting/threshold) ----
 
+
 class SigmaRuleGeneration(BaseModel):
     """Output shape for a rule with NO counting/threshold logic --
     one event either matches or it doesn't."""
+
     title: str = Field(description="Brief title of what the rule detects, max 256 chars")
     description: str
     status: Literal["stable", "test", "experimental", "deprecated", "unsupported"] = "experimental"
     level: Literal["informational", "low", "medium", "high", "critical"]
     logsource: SigmaLogsource
     detection: SigmaDetection
-    tags: list[str] = Field(default_factory=list, description="MITRE tags in 'attack.txxxx' lowercase format")
+    tags: list[str] = Field(
+        default_factory=list, description="MITRE tags in 'attack.txxxx' lowercase format"
+    )
     falsepositives: list[str] = Field(default_factory=list)
     mitre_techniques_inferred: list[InferredMitreTechnique] = Field(
         default_factory=list,
@@ -78,20 +92,36 @@ class SigmaRuleGeneration(BaseModel):
 
 # -- Schema 2: CORRELATION rules (base + correlation, two documents) -
 
+
 class SigmaCorrelationCondition(BaseModel):
     operator: Literal["gt", "gte", "lt", "lte", "eq", "neq"]
     count: int
-    field: str | None = Field(None, description="Required for value_count/value_sum/value_avg/value_median/value_percentile types; leave null otherwise.")
+    field: str | None = Field(
+        None,
+        description="Required for value_count/value_sum/value_avg/value_median/value_percentile types; leave null otherwise.",
+    )
 
 
 class SigmaCorrelation(BaseModel):
     type: Literal[
-        "event_count", "value_count", "temporal", "temporal_ordered",
-        "value_sum", "value_avg", "value_median", "value_percentile",
+        "event_count",
+        "value_count",
+        "temporal",
+        "temporal_ordered",
+        "value_sum",
+        "value_avg",
+        "value_median",
+        "value_percentile",
     ]
-    rules: list[str] = Field(description="Reference name(s) of the base rule(s), matching each base rule's own reference_name exactly.")
-    group_by: list[str] = Field(default_factory=list, description="Fields to group events by, e.g. ['Username'].")
-    timespan: str = Field(description="Integer + single-char unit: s/m/h/d/w/M(months)/y. E.g. '5m'.")
+    rules: list[str] = Field(
+        description="Reference name(s) of the base rule(s), matching each base rule's own reference_name exactly."
+    )
+    group_by: list[str] = Field(
+        default_factory=list, description="Fields to group events by, e.g. ['Username']."
+    )
+    timespan: str = Field(
+        description="Integer + single-char unit: s/m/h/d/w/M(months)/y. E.g. '5m'."
+    )
     condition: SigmaCorrelationCondition
 
 
@@ -100,18 +130,29 @@ class SigmaCorrelationGeneration(BaseModel):
     occurrences over time -- requires TWO linked Sigma documents
     (CONFIRMED from the real Sigma spec), captured here as one
     structured-output call with base_*/correlation_* prefixed fields."""
-    base_title: str = Field(description="Title for the BASE detection rule -- the event pattern being counted, WITHOUT threshold logic.")
+
+    base_title: str = Field(
+        description="Title for the BASE detection rule -- the event pattern being counted, WITHOUT threshold logic."
+    )
     base_description: str
-    base_status: Literal["stable", "test", "experimental", "deprecated", "unsupported"] = "experimental"
+    base_status: Literal["stable", "test", "experimental", "deprecated", "unsupported"] = (
+        "experimental"
+    )
     base_level: Literal["informational", "low", "medium", "high", "critical"]
     base_logsource: SigmaLogsource
     base_detection: SigmaDetection
     base_tags: list[str] = Field(default_factory=list)
-    reference_name: str = Field(description="Short, unique, filename-safe reference name for the base rule (lowercase, underscores, no spaces).")
+    reference_name: str = Field(
+        description="Short, unique, filename-safe reference name for the base rule (lowercase, underscores, no spaces)."
+    )
 
-    correlation_title: str = Field(description="Title for the CORRELATION rule -- the full 'multiple X in Y time' detection.")
+    correlation_title: str = Field(
+        description="Title for the CORRELATION rule -- the full 'multiple X in Y time' detection."
+    )
     correlation_description: str
-    correlation_status: Literal["stable", "test", "experimental", "deprecated", "unsupported"] = "experimental"
+    correlation_status: Literal["stable", "test", "experimental", "deprecated", "unsupported"] = (
+        "experimental"
+    )
     correlation_level: Literal["informational", "low", "medium", "high", "critical"]
     correlation: SigmaCorrelation
     correlation_tags: list[str] = Field(default_factory=list)

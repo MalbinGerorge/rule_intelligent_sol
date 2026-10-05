@@ -16,6 +16,7 @@ SAME already-loaded object. Same principle as a database connection
 pool -- expensive-to-create resources are shared, not recreated per
 request.
 """
+
 from __future__ import annotations
 
 import threading
@@ -34,7 +35,9 @@ def get_shared_embedding_model() -> SentenceTransformer:
     global _embedding_model
     if _embedding_model is None:
         with _lock:
-            if _embedding_model is None:  # re-check inside the lock -- another thread may have just finished loading
+            if (
+                _embedding_model is None
+            ):  # re-check inside the lock -- another thread may have just finished loading
                 _embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
     return _embedding_model
 

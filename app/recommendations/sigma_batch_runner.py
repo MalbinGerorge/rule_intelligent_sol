@@ -11,6 +11,7 @@ tracing can be split per customer AND per operation --
 used elsewhere. Set as an env var at the START of run_sigma_batch,
 before any LLM calls happen.
 """
+
 from __future__ import annotations
 
 import json
@@ -106,7 +107,9 @@ def run_sigma_batch(
                 processed += 1
             except Exception as exc:
                 failed += 1
-                failed_details.append({"rule_id": rule["id"], "rule_name": rule["name"], "error": str(exc)})
+                failed_details.append(
+                    {"rule_id": rule["id"], "rule_name": rule["name"], "error": str(exc)}
+                )
 
             with engine.begin() as db:
                 db.execute(
@@ -127,7 +130,9 @@ def run_sigma_batch(
 
         with engine.begin() as db:
             db.execute(
-                text("UPDATE sigma_generation_jobs SET status = 'completed', finished_at = now() WHERE id = :id"),
+                text(
+                    "UPDATE sigma_generation_jobs SET status = 'completed', finished_at = now() WHERE id = :id"
+                ),
                 {"id": job_id},
             )
     except Exception as exc:
@@ -145,5 +150,7 @@ from app.db.session import engine as _shared_engine  # noqa: E402
 
 
 @celery_app.task(name="run_sigma_batch_task")
-def run_sigma_batch_task(job_id: int, customer_id: int, customer_name: str, rules: list[dict]) -> None:
+def run_sigma_batch_task(
+    job_id: int, customer_id: int, customer_name: str, rules: list[dict]
+) -> None:
     run_sigma_batch(_shared_engine, job_id, customer_id, customer_name, rules)

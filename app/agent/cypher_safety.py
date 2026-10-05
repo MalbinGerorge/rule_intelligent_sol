@@ -23,6 +23,7 @@ something Neo4j Community edition enforces at the row-security level
 the way some other databases do. Treat this check as "catches
 completely unscoped queries," not "guarantees perfect isolation."
 """
+
 from __future__ import annotations
 
 import re
@@ -66,9 +67,7 @@ def check_read_only(query: str) -> None:
 
     call_match = _DANGEROUS_CALL_PREFIXES.search(query)
     if call_match:
-        raise UnsafeCypherError(
-            f"Query calls a disallowed procedure ('{call_match.group(0)}')."
-        )
+        raise UnsafeCypherError(f"Query calls a disallowed procedure ('{call_match.group(0)}').")
 
 
 def check_customer_scoped(query: str) -> None:

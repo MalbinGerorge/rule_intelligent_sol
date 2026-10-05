@@ -13,7 +13,9 @@ class MitreTechniqueCatalog(Base):
     MITRE's own public data (see scripts/sync_mitre_catalog.py)."""
 
     __tablename__ = "mitre_technique_catalog"
-    __table_args__ = (UniqueConstraint("technique_id", name="uq_mitre_technique_catalog_technique_id"),)
+    __table_args__ = (
+        UniqueConstraint("technique_id", name="uq_mitre_technique_catalog_technique_id"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     technique_id: Mapped[str] = mapped_column(Text, nullable=False, index=True)

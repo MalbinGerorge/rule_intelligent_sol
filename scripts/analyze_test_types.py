@@ -13,6 +13,7 @@ Usage:
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import argparse
@@ -38,11 +39,15 @@ def main() -> None:
             raise SystemExit(f"No customer named '{args.name}'.")
 
         rows = conn.execute(
-            text("SELECT object_type, raw_json FROM rules WHERE customer_id = :c"), {"c": customer_id}
+            text("SELECT object_type, raw_json FROM rules WHERE customer_id = :c"),
+            {"c": customer_id},
         ).fetchall()
 
     test_counter: Counter[str] = Counter()
-    test_counter_by_object_type: dict[str, Counter[str]] = {"RULE": Counter(), "BUILDING_BLOCK": Counter()}
+    test_counter_by_object_type: dict[str, Counter[str]] = {
+        "RULE": Counter(),
+        "BUILDING_BLOCK": Counter(),
+    }
     parse_failures = 0
     rules_with_xml = 0
     total = len(rows)
@@ -60,7 +65,9 @@ def main() -> None:
             continue
         for test_el in root.iter("test"):
             name = test_el.get("name", "UNKNOWN")
-            short_name = name.rsplit(".", 1)[-1]  # com.q1labs...ThresholdFunction_Test -> ThresholdFunction_Test
+            short_name = name.rsplit(".", 1)[
+                -1
+            ]  # com.q1labs...ThresholdFunction_Test -> ThresholdFunction_Test
             test_counter[short_name] += 1
             if object_type in test_counter_by_object_type:
                 test_counter_by_object_type[object_type][short_name] += 1

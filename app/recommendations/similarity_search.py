@@ -36,6 +36,7 @@ Confidentiality boundary: SAME as LogSourceGapAnalyzer/MitreGapAnalyzer
 -- pulls ONLY de-identified content from rule_yaml_representations,
 never raw rule_conditions.
 """
+
 from __future__ import annotations
 
 import math
@@ -46,11 +47,11 @@ import structlog
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+
+from app.api.schemas.recommendations import PeerRuleSuggestion, SimilaritySearchResult
 from app.core.config import settings
 from app.recommendations.embedding_service import CHROMA_COLLECTION_NAME, build_embedding_text
 from app.recommendations.reranker import Reranker
-from app.api.schemas.recommendations import SimilaritySearchResult, PeerRuleSuggestion
-
 
 logger = structlog.get_logger(__name__)
 
@@ -80,7 +81,6 @@ def _sigmoid(x: float) -> float:
     return 1 / (1 + math.exp(-x))
 
 
-
 class SimilaritySearchService:
     def __init__(self, db: Session, reranker: Reranker | None = None):
         self.db = db
@@ -89,6 +89,7 @@ class SimilaritySearchService:
 
     def _get_model(self) -> SentenceTransformer:
         from app.recommendations.model_registry import get_shared_embedding_model
+
         return get_shared_embedding_model()
 
     def _get_collection(self):
@@ -137,27 +138,34 @@ class SimilaritySearchService:
                 for rid in candidate_rule_ids
             ],
         )
-        
 
-        rows = self.db.execute(
-            text(
-                """
+        rows = (
+            self.db.execute(
+                text(
+                    """
                 SELECT rule_id, title, description, level, detection, tags
                 FROM rule_yaml_representations
                 WHERE rule_id = ANY(:rule_ids) AND role IN ('standalone', 'base')
                 """
-            ),
-            {"rule_ids": candidate_rule_ids},
-        ).mappings().all()
+                ),
+                {"rule_ids": candidate_rule_ids},
+            )
+            .mappings()
+            .all()
+        )
 
         # Stage 2: rerank the WHOLE shortlist -- same text
         # representation as embedding generation, for consistency.
         rows_dicts = [dict(r) for r in rows]
         candidate_texts = [build_embedding_text(r) for r in rows_dicts]
         raw_rerank_scores = self.reranker.rerank(query, candidate_texts)
-        raw_rerank_score_by_rule_id = {r["rule_id"]: s for r, s in zip(rows_dicts, raw_rerank_scores)}
+        # strict=True: one score per candidate is required -- a length
+        # mismatch must fail loudly, not silently drop candidates.
+        raw_rerank_score_by_rule_id = {
+            r["rule_id"]: s for r, s in zip(rows_dicts, raw_rerank_scores, strict=True)
+        }
         rerank_score_by_rule_id = {
-            r["rule_id"]: _sigmoid(s) for r, s in zip(rows_dicts, raw_rerank_scores)
+            r["rule_id"]: _sigmoid(s) for r, s in zip(rows_dicts, raw_rerank_scores, strict=True)
         }
 
         suggestions = []
@@ -209,4 +217,6 @@ class SimilaritySearchService:
             excluded_low_relevance=excluded_low_relevance,
             duration_ms=duration_ms,
         )
-        return SimilaritySearchResult(results=suggestions, excluded_low_relevance=excluded_low_relevance)
+        return SimilaritySearchResult(
+            results=suggestions, excluded_low_relevance=excluded_low_relevance
+        )

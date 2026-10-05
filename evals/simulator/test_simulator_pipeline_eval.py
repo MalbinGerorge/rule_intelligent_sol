@@ -16,6 +16,7 @@ LLM call in a test).
 
 Run: uv run pytest evals/simulator/test_simulator_pipeline_eval.py -v -s
 """
+
 from __future__ import annotations
 
 import sys
@@ -28,10 +29,10 @@ from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
 from app.agent.simulator.attack_interpreter import AttackInterpreterAgent
+from app.agent.simulator.dsm_property_extractor_trial import DSMPropertyExtractor
 from app.agent.simulator.mitre_validator import MitreTechniqueValidator
 from app.agent.simulator.orchestrator import SimulatorOrchestrator
 from app.agent.simulator.reference_log_retriever import ReferenceLogRetriever
-from app.agent.simulator.dsm_property_extractor_trial import DSMPropertyExtractor
 from app.core.logging_config import configure_logging, configure_simulator_logging
 from app.db.session import engine
 from app.rule_analyzer.llm_provider import LLMProvider
@@ -41,7 +42,9 @@ TEST_CUSTOMER_NAME = "cotecna"
 
 # FILL IN: real, exact log source names from your own QRadar console.
 WINDOWS_LOG_SOURCE_1 = "[Cotecna] - [Windows] - [Server] - GVADEVSQL01"
-WINDOWS_LOG_SOURCE_2 = "[Cotecna] - [Windows] - [Server] - GVADEVSQL01"  # fill in a 2nd real one if you have it
+WINDOWS_LOG_SOURCE_2 = (
+    "[Cotecna] - [Windows] - [Server] - GVADEVSQL01"  # fill in a 2nd real one if you have it
+)
 
 EVAL_CASES = [
     {

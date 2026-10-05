@@ -32,15 +32,25 @@ class RuleOffenseContribution(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True)
-    rule_id: Mapped[int] = mapped_column(ForeignKey("rules.id", ondelete="CASCADE"), nullable=False, index=True)
+    customer_id: Mapped[int] = mapped_column(
+        ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    rule_id: Mapped[int] = mapped_column(
+        ForeignKey("rules.id", ondelete="CASCADE"), nullable=False, index=True
+    )
 
-    qradar_contribution_id: Mapped[int] = mapped_column(BigInteger, nullable=False)  # API's own "id"
-    qradar_rule_id: Mapped[int | None] = mapped_column(BigInteger)  # API's "rule_id" — CONFIRMED same
+    qradar_contribution_id: Mapped[int] = mapped_column(
+        BigInteger, nullable=False
+    )  # API's own "id"
+    qradar_rule_id: Mapped[int | None] = mapped_column(
+        BigInteger
+    )  # API's "rule_id" — CONFIRMED same
     # numeric ID space as rules.qradar_rule_id (verified against real Cotecna data: custom rule
     # IDs like 108042 here match the same range as rules_with_data's "id" field)
     rule_name: Mapped[str | None] = mapped_column(Text)
-    rule_type: Mapped[str | None] = mapped_column(Text)  # EVENT | FLOW | COMMON | USER | ANOMALY | BEHAVIORAL | THRESHOLD
+    rule_type: Mapped[str | None] = mapped_column(
+        Text
+    )  # EVENT | FLOW | COMMON | USER | ANOMALY | BEHAVIORAL | THRESHOLD
     offense_id: Mapped[str | None] = mapped_column(Text)
     event_count: Mapped[int | None] = mapped_column(Integer)
 

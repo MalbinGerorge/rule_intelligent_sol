@@ -4,6 +4,7 @@ at each step. Graph STRUCTURE (which nodes exist, how they connect,
 routing logic) lives in investigation_graph.py; this file is purely
 the implementation each node executes when the graph reaches it.
 """
+
 from __future__ import annotations
 
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
@@ -11,21 +12,21 @@ from sqlalchemy.orm import Session
 
 from app.rule_analyzer.aql_prompt_templates import AQL_TOOL_DESCRIPTION
 from app.rule_analyzer.chain_analysis import analyze_rule_chain
+from app.rule_analyzer.final_report_schema import FinalReport
 from app.rule_analyzer.investigation_state import InvestigationState
 from app.rule_analyzer.investigation_tools import (
+    check_field_extraction_configured,
+    check_field_population_rate,
     check_log_source_status,
     check_reference_data_dependencies,
     check_reference_set_contents,
     check_rule_timing,
     get_shared_dependents,
     run_aql_event_search,
-    check_field_extraction_configured,
-    check_field_population_rate,
 )
 from app.rule_analyzer.llm_provider import LLMProvider
 from app.rule_analyzer.rule_chain_context import format_full_chain_inline
 from app.services.qradar_client import QRadarClient
-from app.rule_analyzer.final_report_schema import FinalReport
 
 _INVESTIGATION_SYSTEM_PROMPT = """You are continuing your analysis of a QRadar rule, now with access to investigation tools.
 
@@ -105,7 +106,9 @@ def build_tools(db: Session, customer_id: int, qradar_client: QRadarClient):
     @tool
     def check_field_extraction(identifier: str, field_name: str) -> str:
         """Check whether ANY extraction (regex/JSON/XML/CEF/LEEF/NVP/AQL) is even configured for a custom field, on the log source type this rule/BB requires. Pass the IDENTIFIER string shown in the rule chain and the exact field name the rule's condition checks (e.g. "Policy Action"). Use this FIRST, before check_field_population -- if no extraction is configured at all, that alone explains an always-empty field with no live event data needed."""
-        return check_field_extraction_configured(db, qradar_client, customer_id, identifier, field_name)
+        return check_field_extraction_configured(
+            db, qradar_client, customer_id, identifier, field_name
+        )
 
     @tool
     def check_field_population(field_name: str, qid: int, log_source_type: str) -> str:
@@ -151,7 +154,9 @@ def build_tools(db: Session, customer_id: int, qradar_client: QRadarClient):
     ]
 
 
-def build_nodes(db: Session, customer_id: int, llm_provider: LLMProvider, qradar_client: QRadarClient) -> dict:
+def build_nodes(
+    db: Session, customer_id: int, llm_provider: LLMProvider, qradar_client: QRadarClient
+) -> dict:
     """Builds and returns the 4 node functions as a dict keyed by node
     name, ready to be registered onto a StateGraph by
     investigation_graph.py. Kept as ONE factory (rather than 4
@@ -195,7 +200,11 @@ def build_nodes(db: Session, customer_id: int, llm_provider: LLMProvider, qradar
         tool_messages = []
         for tool_call in last_message.tool_calls:
             tool_fn = tool_map.get(tool_call["name"])
-            result = tool_fn.invoke(tool_call["args"]) if tool_fn else f"Unknown tool: {tool_call['name']}"
+            result = (
+                tool_fn.invoke(tool_call["args"])
+                if tool_fn
+                else f"Unknown tool: {tool_call['name']}"
+            )
             tool_messages.append(ToolMessage(content=str(result), tool_call_id=tool_call["id"]))
         return {
             **state,
@@ -225,5 +234,3 @@ def build_nodes(db: Session, customer_id: int, llm_provider: LLMProvider, qradar
         "execute_tools": execute_tools_node,
         "synthesize_report": synthesize_report_node,
     }
-
- 

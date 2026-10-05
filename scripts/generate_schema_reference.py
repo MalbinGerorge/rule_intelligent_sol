@@ -7,11 +7,13 @@ a relationship renamed, etc. Not called on every agent request.
 Usage:
     uv run python scripts/generate_schema_reference.py
 """
+
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.graph.client import get_driver, close_driver
+from app.graph.client import close_driver, get_driver
 from app.graph.schema_introspection import generate_schema_reference
 
 

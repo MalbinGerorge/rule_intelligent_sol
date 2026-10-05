@@ -38,6 +38,7 @@ Production hardening in this version:
     handling upstream.
   - Never logs the token.
 """
+
 from __future__ import annotations
 
 import logging
@@ -159,16 +160,26 @@ class QRadarClient:
                 # Deliberately a fresh connection per call (requests.get,
                 # not a Session) — see module docstring for why.
                 resp = requests.get(
-                    url, headers=headers, params=params, timeout=self.timeout, verify=self.verify_ssl
+                    url,
+                    headers=headers,
+                    params=params,
+                    timeout=self.timeout,
+                    verify=self.verify_ssl,
                 )
             except (requests.ConnectionError, requests.Timeout) as exc:
                 last_exc = exc
                 if attempt > self.max_retries:
-                    raise QRadarAPIError(f"Network error after {attempt} attempts: {exc}", url=url) from exc
+                    raise QRadarAPIError(
+                        f"Network error after {attempt} attempts: {exc}", url=url
+                    ) from exc
                 wait = self.backoff_base * (2 ** (attempt - 1))
                 log.warning(
                     "GET %s failed (%s), retrying in %.1fs (attempt %d/%d)",
-                    url, exc, wait, attempt, self.max_retries,
+                    url,
+                    exc,
+                    wait,
+                    attempt,
+                    self.max_retries,
                 )
                 time.sleep(wait)
                 continue
@@ -180,7 +191,11 @@ class QRadarClient:
                 wait = self.backoff_base * (2 ** (attempt - 1))
                 log.warning(
                     "GET %s -> %s, retrying in %.1fs (attempt %d/%d)",
-                    url, resp.status_code, wait, attempt, self.max_retries,
+                    url,
+                    resp.status_code,
+                    wait,
+                    attempt,
+                    self.max_retries,
                 )
                 time.sleep(wait)
                 continue
@@ -193,7 +208,9 @@ class QRadarClient:
                 url=url,
             )
 
-        raise QRadarAPIError(f"Exhausted retries for {url}: {last_exc}", url=url)  # pragma: no cover
+        raise QRadarAPIError(
+            f"Exhausted retries for {url}: {last_exc}", url=url
+        )  # pragma: no cover
 
     def _paginate_text(self, path: str, accept: str, page_size: int = DEFAULT_PAGE_SIZE):
         """Yields raw response bodies page by page, following QRadar's
@@ -279,7 +296,9 @@ class QRadarClient:
         last_seen. Callers filter client-side by collection_id -- no
         confirmed server-side filter for this endpoint, same tradeoff
         as fetch_log_sources()."""
-        return list(self._paginate_text(ENDPOINTS["reference_set_entries"], accept="application/json"))
+        return list(
+            self._paginate_text(ENDPOINTS["reference_set_entries"], accept="application/json")
+        )
 
     def fetch_regex_properties(self) -> list[str]:
         """GET /config/event_sources/custom_properties/regex_properties
@@ -290,25 +309,39 @@ class QRadarClient:
 
     def fetch_property_expressions(self) -> list[str]:
         """Regex-based extraction expressions."""
-        return list(self._paginate_text(ENDPOINTS["property_expressions"], accept="application/json"))
+        return list(
+            self._paginate_text(ENDPOINTS["property_expressions"], accept="application/json")
+        )
 
     def fetch_property_json_expressions(self) -> list[str]:
-        return list(self._paginate_text(ENDPOINTS["property_json_expressions"], accept="application/json"))
+        return list(
+            self._paginate_text(ENDPOINTS["property_json_expressions"], accept="application/json")
+        )
 
     def fetch_property_xml_expressions(self) -> list[str]:
-        return list(self._paginate_text(ENDPOINTS["property_xml_expressions"], accept="application/json"))
+        return list(
+            self._paginate_text(ENDPOINTS["property_xml_expressions"], accept="application/json")
+        )
 
     def fetch_property_cef_expressions(self) -> list[str]:
-        return list(self._paginate_text(ENDPOINTS["property_cef_expressions"], accept="application/json"))
+        return list(
+            self._paginate_text(ENDPOINTS["property_cef_expressions"], accept="application/json")
+        )
 
     def fetch_property_leef_expressions(self) -> list[str]:
-        return list(self._paginate_text(ENDPOINTS["property_leef_expressions"], accept="application/json"))
+        return list(
+            self._paginate_text(ENDPOINTS["property_leef_expressions"], accept="application/json")
+        )
 
     def fetch_property_nvp_expressions(self) -> list[str]:
-        return list(self._paginate_text(ENDPOINTS["property_nvp_expressions"], accept="application/json"))
+        return list(
+            self._paginate_text(ENDPOINTS["property_nvp_expressions"], accept="application/json")
+        )
 
     def fetch_property_aql_expressions(self) -> list[str]:
-        return list(self._paginate_text(ENDPOINTS["property_aql_expressions"], accept="application/json"))
+        return list(
+            self._paginate_text(ENDPOINTS["property_aql_expressions"], accept="application/json")
+        )
 
     def _post(self, path: str, accept: str, data: dict) -> requests.Response:
         """POST counterpart to _get -- same retry/error handling, used
@@ -328,7 +361,9 @@ class QRadarClient:
             except (requests.ConnectionError, requests.Timeout) as exc:
                 last_exc = exc
                 if attempt > self.max_retries:
-                    raise QRadarAPIError(f"Network error after {attempt} attempts: {exc}", url=url) from exc
+                    raise QRadarAPIError(
+                        f"Network error after {attempt} attempts: {exc}", url=url
+                    ) from exc
                 time.sleep(self.backoff_base * (2 ** (attempt - 1)))
                 continue
 
@@ -344,7 +379,9 @@ class QRadarClient:
                 status_code=resp.status_code,
                 url=url,
             )
-        raise QRadarAPIError(f"Exhausted retries for {url}: {last_exc}", url=url)  # pragma: no cover
+        raise QRadarAPIError(
+            f"Exhausted retries for {url}: {last_exc}", url=url
+        )  # pragma: no cover
 
     def create_ariel_search(self, aql_query: str) -> dict:
         """POST /ariel/searches -- starts an ASYNC search, returns
@@ -370,7 +407,9 @@ class QRadarClient:
     def get_ariel_search_results(self, search_id: str) -> dict:
         """GET /ariel/searches/{search_id}/results -- only meaningful
         once status == COMPLETED."""
-        return self._get(f"/api/ariel/searches/{search_id}/results", accept="application/json").json()
+        return self._get(
+            f"/api/ariel/searches/{search_id}/results", accept="application/json"
+        ).json()
 
     def cancel_ariel_search(self, search_id: str) -> None:
         """POST /ariel/searches/{search_id} with status=CANCELED --
@@ -379,7 +418,11 @@ class QRadarClient:
         too long, rather than leaving it running orphaned server-side
         after our own code gives up waiting."""
         try:
-            self._post(f"/api/ariel/searches/{search_id}", accept="application/json", data={"status": "CANCELED"})
+            self._post(
+                f"/api/ariel/searches/{search_id}",
+                accept="application/json",
+                data={"status": "CANCELED"},
+            )
         except QRadarAPIError:
             pass  # best-effort -- we're already in a failure path, don't raise a second error over this
 
@@ -408,7 +451,9 @@ class QRadarClient:
             if status == "COMPLETED":
                 return self.get_ariel_search_results(search_id)
             if status in ("ERROR", "CANCELED"):
-                raise QRadarAPIError(f"Ariel search {search_id} ended with status {status}: {status_resp}")
+                raise QRadarAPIError(
+                    f"Ariel search {search_id} ended with status {status}: {status_resp}"
+                )
 
         self.cancel_ariel_search(search_id)
         raise QRadarAPIError(

@@ -15,6 +15,7 @@ Usage:
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import argparse
@@ -94,28 +95,40 @@ def main() -> None:
 
     print("=== Rules ===")
     if ingested_field:
-        print(f"rules_with_data: found {len(ingested_ids)} rule IDs using attribute '{ingested_field}'")
+        print(
+            f"rules_with_data: found {len(ingested_ids)} rule IDs using attribute '{ingested_field}'"
+        )
     else:
-        print("rules_with_data: could NOT find rule IDs with any candidate attribute "
-              f"{RULE_ID_XML_CANDIDATES} — open the saved XML and tell me the real attribute name.")
+        print(
+            "rules_with_data: could NOT find rule IDs with any candidate attribute "
+            f"{RULE_ID_XML_CANDIDATES} — open the saved XML and tell me the real attribute name."
+        )
 
     if reference_field:
-        print(f"/analytics/rules: found {len(reference_ids)} rule IDs using field '{reference_field}'")
+        print(
+            f"/analytics/rules: found {len(reference_ids)} rule IDs using field '{reference_field}'"
+        )
     else:
-        print("/analytics/rules: could NOT find rule IDs with any candidate field "
-              f"{RULE_ID_JSON_CANDIDATES} — open the saved JSON and tell me the real field name.")
+        print(
+            "/analytics/rules: could NOT find rule IDs with any candidate field "
+            f"{RULE_ID_JSON_CANDIDATES} — open the saved JSON and tell me the real field name."
+        )
 
     if ingested_ids and reference_ids:
         missing_in_reference = ingested_ids - reference_ids
         missing_in_ingested = reference_ids - ingested_ids
         print(f"\nPASS: {len(ingested_ids & reference_ids)} rules matched in both.")
         if missing_in_reference:
-            print(f"FAIL: {len(missing_in_reference)} rules in rules_with_data but NOT in /analytics/rules: "
-                  f"{sorted(missing_in_reference)[:10]}{' ...' if len(missing_in_reference) > 10 else ''}")
+            print(
+                f"FAIL: {len(missing_in_reference)} rules in rules_with_data but NOT in /analytics/rules: "
+                f"{sorted(missing_in_reference)[:10]}{' ...' if len(missing_in_reference) > 10 else ''}"
+            )
         if missing_in_ingested:
-            print(f"NOTE: {len(missing_in_ingested)} rules in /analytics/rules but not pulled via rules_with_data "
-                  f"(may be disabled/filtered): {sorted(missing_in_ingested)[:10]}"
-                  f"{' ...' if len(missing_in_ingested) > 10 else ''}")
+            print(
+                f"NOTE: {len(missing_in_ingested)} rules in /analytics/rules but not pulled via rules_with_data "
+                f"(may be disabled/filtered): {sorted(missing_in_ingested)[:10]}"
+                f"{' ...' if len(missing_in_ingested) > 10 else ''}"
+            )
 
     # --- Building blocks reference (printed for manual inspection) ---
     bb_pages = read_pages(pull_dir, "building_blocks")

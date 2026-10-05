@@ -14,8 +14,12 @@ class ValidationResult(Base):
     __tablename__ = "validation_results"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True)
-    entity_type: Mapped[str] = mapped_column(Text, nullable=False, index=True)  # 'rule' | 'building_block'
+    customer_id: Mapped[int] = mapped_column(
+        ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    entity_type: Mapped[str] = mapped_column(
+        Text, nullable=False, index=True
+    )  # 'rule' | 'building_block'
     entity_ref: Mapped[str] = mapped_column(Text, nullable=False, index=True)
     check_type: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(Text, nullable=False)  # 'pass' | 'fail' | 'missing'

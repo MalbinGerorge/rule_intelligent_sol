@@ -2,8 +2,9 @@ from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.models.customer_credentials import CustomerCredentials
+
 from app.db.base import Base
+from app.models.customer_credentials import CustomerCredentials
 
 
 class Customer(Base):
@@ -16,4 +17,6 @@ class Customer(Base):
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    credentials: Mapped["CustomerCredentials"] = relationship(back_populates="customer", uselist=False)
+    credentials: Mapped["CustomerCredentials"] = relationship(
+        back_populates="customer", uselist=False
+    )

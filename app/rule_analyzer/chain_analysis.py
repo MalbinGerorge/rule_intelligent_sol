@@ -9,6 +9,7 @@ Structured output (a Pydantic model), not free text -- so later steps
 (the ReAct loop, final report synthesis) can rely on a guaranteed
 shape instead of re-parsing prose.
 """
+
 from __future__ import annotations
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -32,8 +33,12 @@ Given the rule's full chain (conditions, referenced building blocks, thresholds,
 
 
 class ChainAnalysis(BaseModel):
-    detection_intent: str = Field(description="What real-world threat/behavior this rule is designed to detect")
-    preconditions: list[str] = Field(description="Everything that must structurally be true for this rule to fire")
+    detection_intent: str = Field(
+        description="What real-world threat/behavior this rule is designed to detect"
+    )
+    preconditions: list[str] = Field(
+        description="Everything that must structurally be true for this rule to fire"
+    )
     structural_flags: list[str] = Field(
         default_factory=list,
         description="Obvious structural problems visible from the definition alone; empty if none",
@@ -51,7 +56,9 @@ def analyze_rule_chain(llm_provider: LLMProvider, formatted_chain: str) -> Chain
     )
 
 
-def analyze_rule(db: Session, llm_provider: LLMProvider, customer_id: int, rule_id: int) -> ChainAnalysis | None:
+def analyze_rule(
+    db: Session, llm_provider: LLMProvider, customer_id: int, rule_id: int
+) -> ChainAnalysis | None:
     """
     The full first stage, wired end to end:
         rule_id -> format_full_chain_inline (Postgres, DFS, nested

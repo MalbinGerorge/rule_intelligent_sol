@@ -28,6 +28,7 @@ uvicorn):
 (--pool=solo is required on Windows -- Celery's default "prefork" pool
 doesn't work there. On Linux/Mac, --pool=solo can be dropped.)
 """
+
 from __future__ import annotations
 
 from celery import Celery
@@ -43,7 +44,11 @@ celery_app = Celery(
     # @celery_app.task somewhere else isn't enough on its own; the
     # worker needs to be explicitly told which module(s) to import so
     # it actually discovers and registers the tasks defined there.
-    include=["app.services.investigation_runner", "app.recommendations.sigma_batch_runner","app.recommendations.embedding_batch_runner"],
+    include=[
+        "app.services.investigation_runner",
+        "app.recommendations.sigma_batch_runner",
+        "app.recommendations.embedding_batch_runner",
+    ],
 )
 
 celery_app.conf.update(
@@ -57,4 +62,4 @@ celery_app.conf.update(
     # (2 searches x ~40s + other tool calls + LLM calls).
     task_time_limit=300,
     task_soft_time_limit=270,
-)   
+)

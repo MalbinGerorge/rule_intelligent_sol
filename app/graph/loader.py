@@ -44,6 +44,7 @@ Relationships:
     (:Rule)-[:DETECTS_TECHNIQUE]->(:MitreTechnique)
     (:MitreTechnique)-[:BELONGS_TO_TACTIC]->(:MitreTactic)
 """
+
 from __future__ import annotations
 
 from neo4j import Driver
@@ -88,9 +89,10 @@ def clear_customer_graph(driver: Driver, customer_id: int) -> None:
 
 
 def _load_rule_nodes(driver: Driver, db: Session, customer_id: int) -> int:
-    rows = db.execute(
-        text(
-            """
+    rows = (
+        db.execute(
+            text(
+                """
             SELECT rs.id AS rule_id, rs.customer_id, rs.qradar_rule_id, rs.identifier, rs.name,
                 rs.object_type, rs.type, rs.enabled, rs.owner, rs.origin, rs.created_at, rs.updated_at,
                 resp.force_offense_creation, resp.offense_mapping, resp.severity,
@@ -110,9 +112,12 @@ def _load_rule_nodes(driver: Driver, db: Session, customer_id: int) -> int:
             LEFT JOIN rule_responses resp ON resp.rule_id = rs.id
             WHERE rs.customer_id = :c
             """
-        ),
-        {"c": customer_id},
-    ).mappings().all()
+            ),
+            {"c": customer_id},
+        )
+        .mappings()
+        .all()
+    )
 
     with driver.session() as session:
         session.run(
@@ -160,34 +165,42 @@ def _load_bb_reference_edges(driver: Driver, db: Session, customer_id: int) -> i
     # bb_id on rule_building_blocks is the referenced BB's identifier
     # string (e.g. SYSTEM-1300), so we match the target by identifier,
     # not by Postgres id.
-    rows = db.execute(
-        text(
-            """
+    rows = (
+        db.execute(
+            text(
+                """
             SELECT rbb.rule_id, r.customer_id, rbb.bb_id
             FROM rule_building_blocks rbb
             JOIN rules r ON r.id = rbb.rule_id
             WHERE r.customer_id = :c
             """
-        ),
-        {"c": customer_id},
-    ).mappings().all()
+            ),
+            {"c": customer_id},
+        )
+        .mappings()
+        .all()
+    )
 
     # ThresholdFunction_Test conditions carry per-(rule, bb) threshold
     # data — merge it onto the matching REFERENCES edge instead of a
     # separate Condition node. A rule can have MULTIPLE
     # ThresholdFunction_Test entries (rare but real), each naming its own
     # bb_ids, so we key by (rule_id, bb_id) pair, not just rule_id.
-    threshold_rows = db.execute(
-        text(
-            """
+    threshold_rows = (
+        db.execute(
+            text(
+                """
             SELECT rc.rule_id, rc.structured_data
             FROM rule_conditions rc
             JOIN rules r ON r.id = rc.rule_id
             WHERE r.customer_id = :c AND rc.test_class = 'ThresholdFunction_Test'
             """
-        ),
-        {"c": customer_id},
-    ).mappings().all()
+            ),
+            {"c": customer_id},
+        )
+        .mappings()
+        .all()
+    )
 
     threshold_by_pair: dict[tuple[int, str], dict] = {}
     for t in threshold_rows:
@@ -226,9 +239,10 @@ def _load_bb_reference_edges(driver: Driver, db: Session, customer_id: int) -> i
 
 
 def _load_condition_nodes(driver: Driver, db: Session, customer_id: int) -> int:
-    rows = db.execute(
-        text(
-            """
+    rows = (
+        db.execute(
+            text(
+                """
             SELECT rc.id AS condition_id, rc.rule_id, rc.sequence_order,
                    rc.test_class, rc.negated, rc.raw_text, rc.structured_data
             FROM rule_conditions rc
@@ -240,9 +254,12 @@ def _load_condition_nodes(driver: Driver, db: Session, customer_id: int) -> int:
                   'CauseAndEffect_Test', 'TriggerMatchCount','EventCategory_Test','ReferenceSetTest','ReferenceDataTest'
               )
             """
-        ),
-        {"c": customer_id},
-    ).mappings().all()
+            ),
+            {"c": customer_id},
+        )
+        .mappings()
+        .all()
+    )
 
     prepared = []
     for r in rows:
@@ -295,24 +312,30 @@ def _load_logsource_type_edges(driver: Driver, db: Session, customer_id: int) ->
     specific configured instance. See _load_device_edges for the
     distinct, more specific concept (DeviceID_Test).
     """
-    rows = db.execute(
-        text(
-            """
+    rows = (
+        db.execute(
+            text(
+                """
             SELECT rc.rule_id, r.customer_id, rc.structured_data
             FROM rule_conditions rc
             JOIN rules r ON r.id = rc.rule_id
             WHERE r.customer_id = :c AND rc.test_class = 'DeviceTypeID_Test'
             """
-        ),
-        {"c": customer_id},
-    ).mappings().all()
+            ),
+            {"c": customer_id},
+        )
+        .mappings()
+        .all()
+    )
 
     prepared = []
     for r in rows:
         device_type = r["structured_data"].get("device_type")
         names = device_type.get("log_source_names", []) if device_type else []
         for name in names:
-            prepared.append({"rule_id": r["rule_id"], "customer_id": r["customer_id"], "name": name})
+            prepared.append(
+                {"rule_id": r["rule_id"], "customer_id": r["customer_id"], "name": name}
+            )
 
     with driver.session() as session:
         session.run(
@@ -352,9 +375,10 @@ def _load_followed_by_edges(driver: Driver, db: Session, customer_id: int) -> in
         (every real sample seen has exactly 1 BB per stage, but the
         cross product handles multi-BB stages correctly too)
     """
-    rows = db.execute(
-        text(
-            """
+    rows = (
+        db.execute(
+            text(
+                """
             SELECT rc.rule_id AS source_rule_id, r.name AS source_rule_name,
                    rc.test_class, rc.structured_data
             FROM rule_conditions rc
@@ -363,9 +387,12 @@ def _load_followed_by_edges(driver: Driver, db: Session, customer_id: int) -> in
               AND rc.test_class IN ('SequenceFunction_Test', 'DoubleSequenceFunction_Test',
                                      'CauseAndEffect_Test', 'TriggerMatchCount')
             """
-        ),
-        {"c": customer_id},
-    ).mappings().all()
+            ),
+            {"c": customer_id},
+        )
+        .mappings()
+        .all()
+    )
 
     prepared = []
     for r in rows:
@@ -384,15 +411,17 @@ def _load_followed_by_edges(driver: Driver, db: Session, customer_id: int) -> in
                 continue
             bb_ids = seq.get("bb_ids", [])
             for i in range(len(bb_ids) - 1):
-                prepared.append({
-                    **base,
-                    "source_bb_id": bb_ids[i],
-                    "target_bb_id": bb_ids[i + 1],
-                    "min_count": seq.get("min_count"),
-                    "correlation_field": seq.get("correlation_field_a"),
-                    "time_value": seq.get("time_value"),
-                    "time_unit": seq.get("time_unit"),
-                })
+                prepared.append(
+                    {
+                        **base,
+                        "source_bb_id": bb_ids[i],
+                        "target_bb_id": bb_ids[i + 1],
+                        "min_count": seq.get("min_count"),
+                        "correlation_field": seq.get("correlation_field_a"),
+                        "time_value": seq.get("time_value"),
+                        "time_unit": seq.get("time_unit"),
+                    }
+                )
 
         elif test_class == "DoubleSequenceFunction_Test":
             dseq = data.get("double_sequence")
@@ -400,16 +429,18 @@ def _load_followed_by_edges(driver: Driver, db: Session, customer_id: int) -> in
                 continue
             for src in dseq.get("stage1_bb_ids", []):
                 for tgt in dseq.get("stage2_bb_ids", []):
-                    prepared.append({
-                        **base,
-                        "source_bb_id": src,
-                        "target_bb_id": tgt,
-                        "min_count": dseq.get("stage2_min_count"),
-                        "correlation_field": dseq.get("stage2_correlation_field"),
-                        "time_value": dseq.get("time_value"),
-                        "time_unit": dseq.get("time_unit"),
-                        "direction": dseq.get("direction"),
-                    })
+                    prepared.append(
+                        {
+                            **base,
+                            "source_bb_id": src,
+                            "target_bb_id": tgt,
+                            "min_count": dseq.get("stage2_min_count"),
+                            "correlation_field": dseq.get("stage2_correlation_field"),
+                            "time_value": dseq.get("time_value"),
+                            "time_unit": dseq.get("time_unit"),
+                            "direction": dseq.get("direction"),
+                        }
+                    )
 
         elif test_class == "CauseAndEffect_Test":
             cae = data.get("cause_and_effect")
@@ -420,15 +451,17 @@ def _load_followed_by_edges(driver: Driver, db: Session, customer_id: int) -> in
             combined_field = f"{side} {ftype}".strip() or None
             for src in cae.get("stage1_bb_ids", []):
                 for tgt in cae.get("stage2_bb_ids", []):
-                    prepared.append({
-                        **base,
-                        "source_bb_id": src,
-                        "target_bb_id": tgt,
-                        "min_count": cae.get("stage2_min_count"),
-                        "correlation_field": combined_field,
-                        "time_value": cae.get("time_value"),
-                        "time_unit": cae.get("time_unit"),
-                    })
+                    prepared.append(
+                        {
+                            **base,
+                            "source_bb_id": src,
+                            "target_bb_id": tgt,
+                            "min_count": cae.get("stage2_min_count"),
+                            "correlation_field": combined_field,
+                            "time_value": cae.get("time_value"),
+                            "time_unit": cae.get("time_unit"),
+                        }
+                    )
 
         elif test_class == "TriggerMatchCount":
             tmc = data.get("trigger_match_count")
@@ -436,15 +469,17 @@ def _load_followed_by_edges(driver: Driver, db: Session, customer_id: int) -> in
                 continue
             for src in tmc.get("trigger_bb_ids", []):
                 for tgt in tmc.get("later_bb_ids", []):
-                    prepared.append({
-                        **base,
-                        "source_bb_id": src,
-                        "target_bb_id": tgt,
-                        "min_count": tmc.get("later_min_count"),
-                        "correlation_field": tmc.get("correlation_field"),
-                        "time_value": tmc.get("time_value"),
-                        "time_unit": tmc.get("time_unit"),
-                    })
+                    prepared.append(
+                        {
+                            **base,
+                            "source_bb_id": src,
+                            "target_bb_id": tgt,
+                            "min_count": tmc.get("later_min_count"),
+                            "correlation_field": tmc.get("correlation_field"),
+                            "time_value": tmc.get("time_value"),
+                            "time_unit": tmc.get("time_unit"),
+                        }
+                    )
 
     with driver.session() as session:
         session.run(
@@ -470,24 +505,30 @@ def _load_device_edges(driver: Driver, db: Session, customer_id: int) -> int:
     "rules needing this one specific configured device" are genuinely
     different questions.
     """
-    rows = db.execute(
-        text(
-            """
+    rows = (
+        db.execute(
+            text(
+                """
             SELECT rc.rule_id, r.customer_id, rc.structured_data
             FROM rule_conditions rc
             JOIN rules r ON r.id = rc.rule_id
             WHERE r.customer_id = :c AND rc.test_class = 'DeviceID_Test'
             """
-        ),
-        {"c": customer_id},
-    ).mappings().all()
+            ),
+            {"c": customer_id},
+        )
+        .mappings()
+        .all()
+    )
 
     prepared = []
     for r in rows:
         device_id = r["structured_data"].get("device_id")
         names = device_id.get("device_names", []) if device_id else []
         for name in names:
-            prepared.append({"rule_id": r["rule_id"], "customer_id": r["customer_id"], "name": name})
+            prepared.append(
+                {"rule_id": r["rule_id"], "customer_id": r["customer_id"], "name": name}
+            )
 
     with driver.session() as session:
         session.run(
@@ -509,29 +550,35 @@ def _load_event_category_edges(driver: Driver, db: Session, customer_id: int) ->
     unique across different high-level categories. Answers "which rules
     fire on this category" as a direct query.
     """
-    rows = db.execute(
-        text(
-            """
+    rows = (
+        db.execute(
+            text(
+                """
             SELECT rc.rule_id, r.customer_id, rc.structured_data
             FROM rule_conditions rc
             JOIN rules r ON r.id = rc.rule_id
             WHERE r.customer_id = :c AND rc.test_class = 'EventCategory_Test'
             """
-        ),
-        {"c": customer_id},
-    ).mappings().all()
+            ),
+            {"c": customer_id},
+        )
+        .mappings()
+        .all()
+    )
 
     prepared = []
     for r in rows:
         ec = r["structured_data"].get("event_category")
         cats = ec.get("categories", []) if ec else []
         for cat in cats:
-            prepared.append({
-                "rule_id": r["rule_id"],
-                "customer_id": r["customer_id"],
-                "high_level": cat.get("high_level"),
-                "low_level": cat.get("low_level") or "",
-            })
+            prepared.append(
+                {
+                    "rule_id": r["rule_id"],
+                    "customer_id": r["customer_id"],
+                    "high_level": cat.get("high_level"),
+                    "low_level": cat.get("low_level") or "",
+                }
+            )
 
     with driver.session() as session:
         session.run(
@@ -554,29 +601,35 @@ def _load_qid_edges(driver: Driver, db: Session, customer_id: int) -> int:
     call needed — confirmed from real data that <text> already resolves
     "(QID) Event Name" pairs directly.
     """
-    rows = db.execute(
-        text(
-            """
+    rows = (
+        db.execute(
+            text(
+                """
             SELECT rc.rule_id, r.customer_id, rc.structured_data
             FROM rule_conditions rc
             JOIN rules r ON r.id = rc.rule_id
             WHERE r.customer_id = :c AND rc.test_class = 'QID_Test'
             """
-        ),
-        {"c": customer_id},
-    ).mappings().all()
+            ),
+            {"c": customer_id},
+        )
+        .mappings()
+        .all()
+    )
 
     prepared = []
     for r in rows:
         qid_data = r["structured_data"].get("qid")
         qids = qid_data.get("qids", []) if qid_data else []
         for q in qids:
-            prepared.append({
-                "rule_id": r["rule_id"],
-                "customer_id": r["customer_id"],
-                "qid": q.get("qid"),
-                "event_name": q.get("event_name"),
-            })
+            prepared.append(
+                {
+                    "rule_id": r["rule_id"],
+                    "customer_id": r["customer_id"],
+                    "qid": q.get("qid"),
+                    "event_name": q.get("event_name"),
+                }
+            )
 
     with driver.session() as session:
         session.run(
@@ -601,17 +654,21 @@ def _load_refset_edges(driver: Driver, db: Session, customer_id: int) -> int:
     resolved live via QRadar's reference-data API on-demand for UI3/UI4
     validation, never cached here. See project notes for the reasoning.
     """
-    rows = db.execute(
-        text(
-            """
+    rows = (
+        db.execute(
+            text(
+                """
             SELECT rc.rule_id, r.customer_id, rc.structured_data
             FROM rule_conditions rc
             JOIN rules r ON r.id = rc.rule_id
             WHERE r.customer_id = :c AND rc.test_class = 'ReferenceSetTest'
             """
-        ),
-        {"c": customer_id},
-    ).mappings().all()
+            ),
+            {"c": customer_id},
+        )
+        .mappings()
+        .all()
+    )
 
     prepared = []
     for r in rows:
@@ -619,13 +676,15 @@ def _load_refset_edges(driver: Driver, db: Session, customer_id: int) -> int:
         if not refset:
             continue
         for name in refset.get("refset_names", []):
-            prepared.append({
-                "rule_id": r["rule_id"],
-                "customer_id": r["customer_id"],
-                "name": name,
-                "fields": refset.get("fields", []),
-                "match_mode": refset.get("refset_match_mode"),
-            })
+            prepared.append(
+                {
+                    "rule_id": r["rule_id"],
+                    "customer_id": r["customer_id"],
+                    "name": name,
+                    "fields": refset.get("fields", []),
+                    "match_mode": refset.get("refset_match_mode"),
+                }
+            )
 
     with driver.session() as session:
         session.run(
@@ -648,17 +707,21 @@ def _load_refmap_edges(driver: Driver, db: Session, customer_id: int) -> int:
     Same structural-identity-only principle as _load_refset_edges —
     contents are never cached here.
     """
-    rows = db.execute(
-        text(
-            """
+    rows = (
+        db.execute(
+            text(
+                """
             SELECT rc.rule_id, r.customer_id, rc.structured_data
             FROM rule_conditions rc
             JOIN rules r ON r.id = rc.rule_id
             WHERE r.customer_id = :c AND rc.test_class = 'ReferenceDataTest'
             """
-        ),
-        {"c": customer_id},
-    ).mappings().all()
+            ),
+            {"c": customer_id},
+        )
+        .mappings()
+        .all()
+    )
 
     prepared = []
     for r in rows:
@@ -666,13 +729,15 @@ def _load_refmap_edges(driver: Driver, db: Session, customer_id: int) -> int:
         if not refmap:
             continue
         for name in refmap.get("map_names", []):
-            prepared.append({
-                "rule_id": r["rule_id"],
-                "customer_id": r["customer_id"],
-                "name": name,
-                "key_field": refmap.get("key_field"),
-                "value_field": refmap.get("value_field"),
-            })
+            prepared.append(
+                {
+                    "rule_id": r["rule_id"],
+                    "customer_id": r["customer_id"],
+                    "name": name,
+                    "key_field": refmap.get("key_field"),
+                    "value_field": refmap.get("value_field"),
+                }
+            )
 
     with driver.session() as session:
         session.run(
@@ -686,7 +751,6 @@ def _load_refmap_edges(driver: Driver, db: Session, customer_id: int) -> int:
             rows=prepared,
         )
     return len(prepared)
-
 
 
 def _load_reference_write_edges(driver: Driver, db: Session, customer_id: int) -> int:
@@ -704,18 +768,22 @@ def _load_reference_write_edges(driver: Driver, db: Session, customer_id: int) -
     speculative node types for sub-types never actually observed would
     be guessing, not building from confirmed data.
     """
-    rows = db.execute(
-        text(
-            """
+    rows = (
+        db.execute(
+            text(
+                """
             SELECT resp.rule_id, r.customer_id, resp.ref_write_target_name,
                    resp.ref_write_key_field, resp.ref_write_filter, resp.ref_write_type
             FROM rule_responses resp
             JOIN rules r ON r.id = resp.rule_id
             WHERE r.customer_id = :c AND resp.ref_write_target_name IS NOT NULL
             """
-        ),
-        {"c": customer_id},
-    ).mappings().all()
+            ),
+            {"c": customer_id},
+        )
+        .mappings()
+        .all()
+    )
 
     with driver.session() as session:
         session.run(
@@ -733,19 +801,22 @@ def _load_reference_write_edges(driver: Driver, db: Session, customer_id: int) -
     return len(rows)
 
 
-
 def _load_mitre_edges(driver: Driver, db: Session, customer_id: int) -> int:
-    rows = db.execute(
-        text(
-            """
+    rows = (
+        db.execute(
+            text(
+                """
             SELECT mm.rule_id, mm.tactic_id, mm.tactic, mm.technique_id, mm.technique_name
             FROM mitre_mappings mm
             JOIN rules r ON r.id = mm.rule_id
             WHERE r.customer_id = :c AND mm.technique_id IS NOT NULL AND mm.technique_id != ''
             """
-        ),
-        {"c": customer_id},
-    ).mappings().all()
+            ),
+            {"c": customer_id},
+        )
+        .mappings()
+        .all()
+    )
 
     with driver.session() as session:
         session.run(
@@ -766,21 +837,26 @@ def _load_mitre_edges(driver: Driver, db: Session, customer_id: int) -> int:
         )
     return len(rows)
 
+
 def _load_match_count_properties(driver: Driver, db: Session, customer_id: int) -> int:
     """MatchCount's self-referential threshold data lives as properties
     directly on the Rule node -- it references no second entity, unlike
     ThresholdFunction_Test/TriggerMatchCount, which attach to edges."""
-    rows = db.execute(
-        text(
-            """
+    rows = (
+        db.execute(
+            text(
+                """
             SELECT rc.rule_id, rc.structured_data
             FROM rule_conditions rc
             JOIN rules r ON r.id = rc.rule_id
             WHERE r.customer_id = :c AND rc.test_class = 'MatchCount'
             """
-        ),
-        {"c": customer_id},
-    ).mappings().all()
+            ),
+            {"c": customer_id},
+        )
+        .mappings()
+        .all()
+    )
 
     prepared = []
     for r in rows:
@@ -803,6 +879,7 @@ def _load_match_count_properties(driver: Driver, db: Session, customer_id: int) 
         )
     return len(prepared)
 
+
 def build_customer_graph(driver: Driver, db: Session, customer_id: int) -> dict:
     """Full rebuild: clear this customer's graph, then reload everything
     fresh from Postgres. Returns counts for each piece loaded."""
@@ -821,7 +898,6 @@ def build_customer_graph(driver: Driver, db: Session, customer_id: int) -> dict:
     mitre_count = _load_mitre_edges(driver, db, customer_id)
     refwrite_count = _load_reference_write_edges(driver, db, customer_id)
     match_count_count = _load_match_count_properties(driver, db, customer_id)
-
 
     return {
         "rule_nodes": rule_count,

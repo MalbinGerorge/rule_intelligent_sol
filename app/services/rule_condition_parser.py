@@ -38,6 +38,7 @@ NOT handled here (separate pipeline):
 ALL 60 confirmed real-data test classes are now covered, either via
 this general algorithm or one of the 15 special-cased extractors above.
 """
+
 from __future__ import annotations
 
 import html
@@ -77,7 +78,9 @@ _TIME_UNIT_NAMES = {"s": "seconds", "m": "minutes", "h": "hours", "d": "days"}
 # building a full AQL expression parser (regex MATCHES, ilike wildcards,
 # REFERENCEMAPSETCONTAINS, boolean AND/OR/parens) — only 8 occurrences
 # total across the real dataset; the query is stored as one string.
-_AQL_TEXT_PATTERN = re.compile(r"^when the (event|flow) matches\s+(.+?)\s+AQL filter query$", re.DOTALL)
+_AQL_TEXT_PATTERN = re.compile(
+    r"^when the (event|flow) matches\s+(.+?)\s+AQL filter query$", re.DOTALL
+)
 
 # DeviceTypeID_Test-specific: confirmed from 5 real samples. userOptions
 # uses method="getDeviceTypeDescs" (dynamic, no local <option> table) —
@@ -87,7 +90,9 @@ _AQL_TEXT_PATTERN = re.compile(r"^when the (event|flow) matches\s+(.+?)\s+AQL fi
 # them) — log_source_types_reference (built separately) still useful
 # for the full catalog + custom/internal metadata, but not required just
 # to fix numeric-code display.
-_DEVICE_TYPE_TEXT_PATTERN = re.compile(r"^when the event\(s\) were detected by one or more of\s+(.+)$")
+_DEVICE_TYPE_TEXT_PATTERN = re.compile(
+    r"^when the event\(s\) were detected by one or more of\s+(.+)$"
+)
 
 # DeviceID_Test-specific: confirmed from 5 real samples (same pattern as
 # DeviceTypeID_Test — userOptions uses method="getDevices" source="class",
@@ -121,9 +126,7 @@ _QID_ENTRY_PATTERN = re.compile(r"^\((\d+)\)\s*(.+)$")
 # uses the first position, Fortigate/Authentication samples use the
 # second). Matches whichever comes first: stop at " in <digit" or end
 # of string.
-_TRIGGER_MATCH_CORRELATION_PATTERN = re.compile(
-    r"with the same\s+(.+?)(?:\s+in\s+\d|\s*$)"
-)
+_TRIGGER_MATCH_CORRELATION_PATTERN = re.compile(r"with the same\s+(.+?)(?:\s+in\s+\d|\s*$)")
 
 # ReferenceSetTest-specific: confirmed from 5 real samples. Same "text
 # already resolved" pattern — <text> shows real reference set names,
@@ -132,9 +135,7 @@ _TRIGGER_MATCH_CORRELATION_PATTERN = re.compile(
 # NOT the set's live contents (see project notes: contents are
 # genuinely dynamic operational data, resolved live via QRadar API
 # on-demand for UI3/UI4, never cached here).
-_REFSET_TEXT_PATTERN = re.compile(
-    r"^when (any|all) of (.+?) are contained in (any|all) of\s+(.+)$"
-)
+_REFSET_TEXT_PATTERN = re.compile(r"^when (any|all) of (.+?) are contained in (any|all) of\s+(.+)$")
 
 # ReferenceDataTest-specific: confirmed from 2 real samples, both the
 # MAP shape (key + value). Map-of-Sets and Table shapes NOT yet
@@ -149,6 +150,7 @@ _BB_ID_LIKE_PATTERN = re.compile(
     r"^(SYSTEM-\d+|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$",
     re.IGNORECASE,
 )
+
 
 def _test_short_name(test_el: ET.Element) -> str:
     return test_el.get("name", "UNKNOWN").rsplit(".", 1)[-1]
@@ -242,7 +244,9 @@ def extract_threshold_condition(test_el: ET.Element) -> dict | None:
         "grouping_field": grouping[0] if grouping else None,
         "count": int(count) if count.isdigit() else count,
         "operator": operator,
-        "cardinality_count": int(cardinality_count) if cardinality_count and cardinality_count.isdigit() else cardinality_count,
+        "cardinality_count": int(cardinality_count)
+        if cardinality_count and cardinality_count.isdigit()
+        else cardinality_count,
         "cardinality_field": cardinality_field[0] if cardinality_field else None,
         "time_value": int(time_value) if time_value.isdigit() else time_value,
         "time_unit": _TIME_UNIT_NAMES.get(time_unit_raw, time_unit_raw),
@@ -501,7 +505,7 @@ def extract_trigger_match_count_condition(test_el: ET.Element) -> dict | None:
     representation and are inconsistently shaped (sometimes camelCase
     like "userName", sometimes already readable like "Policy Name").
     <text> is always the correct human-facing label, and can carry
-    extra meaning the raw value omits entirely (e.g. a "(custom)" 
+    extra meaning the raw value omits entirely (e.g. a "(custom)"
     suffix marking a custom event property). Some real samples also
     have NO correlation field at all (no "with the same X" in the
     sentence) — correctly returns None for those, not a crash or a
@@ -539,7 +543,9 @@ def extract_trigger_match_count_condition(test_el: ET.Element) -> dict | None:
         "later_min_count": _selection("2"),
         "time_value": int(time_value) if time_value.isdigit() else time_value,
         "time_unit": _TIME_UNIT_NAMES.get(time_unit_raw, time_unit_raw),
-        "correlation_field": correlation_field.strip() if correlation_field and correlation_field.strip() else None,
+        "correlation_field": correlation_field.strip()
+        if correlation_field and correlation_field.strip()
+        else None,
     }
 
 
@@ -708,6 +714,7 @@ def extract_rule_match_condition(test_el: ET.Element) -> dict | None:
     if not candidate_ids:
         return None
     return {"bb_ids": candidate_ids}
+
 
 def extract_dst_port_condition(test_el: ET.Element) -> dict | None:
     """DstPort_Test-specific: confirmed from real data -- param 1's

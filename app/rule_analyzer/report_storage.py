@@ -6,6 +6,7 @@ inside run_investigation() itself -- a deliberate, separate, explicit
 call, so callers (e.g. ad-hoc dev/test runs) can choose whether a
 given run actually gets saved to history.
 """
+
 from __future__ import annotations
 
 from sqlalchemy import text
@@ -32,7 +33,9 @@ def save_investigation_report(db: Session, customer_id: int, rule_id: int, resul
             "customer_id": customer_id,
             "rule_id": rule_id,
             "chain_analysis": chain_analysis.model_dump_json() if chain_analysis else None,
-            "final_report": final_report_structured.model_dump_json() if final_report_structured else None,
+            "final_report": final_report_structured.model_dump_json()
+            if final_report_structured
+            else None,
             "rendered_report": result.get("final_report"),
             "trace": result.get("trace"),
             "tool_calls_made": result.get("tool_calls_made"),

@@ -8,8 +8,10 @@ changing operational data.
 Usage:
     uv run python scripts/sync_custom_properties.py --name cotecna
 """
+
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import argparse

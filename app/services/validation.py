@@ -15,6 +15,7 @@ Only failures get written to validation_results (a full audit log of
 every passing row would bloat the table with no actionable value) — but
 pass counts are still returned so the caller can report a clean summary.
 """
+
 from __future__ import annotations
 
 from sqlalchemy import text
@@ -67,7 +68,7 @@ def validate_rules(session: Session, customer_id: int) -> dict:
                 "c": customer_id,
                 "ref": str(qradar_rule_id),
                 "details": f"Ingested rule (identifier={identifier}, name={name!r}) not found in /analytics/rules — "
-                           f"may have been deleted in QRadar since last pull, or the reference pull itself failed.",
+                f"may have been deleted in QRadar since last pull, or the reference pull itself failed.",
             },
         )
 
@@ -83,12 +84,13 @@ def validate_rules(session: Session, customer_id: int) -> dict:
                 "c": customer_id,
                 "ref": str(qradar_rule_id),
                 "details": f"Rule in /analytics/rules (identifier={identifier}, name={name!r}) was not ingested via "
-                           f"rules_with_data — check pagination, Allow-Hidden, or permissions.",
+                f"rules_with_data — check pagination, Allow-Hidden, or permissions.",
             },
         )
 
     total_ingested = session.execute(
-        text("SELECT count(*) FROM rules WHERE customer_id = :c AND object_type = 'RULE'"), {"c": customer_id}
+        text("SELECT count(*) FROM rules WHERE customer_id = :c AND object_type = 'RULE'"),
+        {"c": customer_id},
     ).scalar_one()
     total_reference = session.execute(
         text("SELECT count(*) FROM rules_reference WHERE customer_id = :c"), {"c": customer_id}
@@ -104,7 +106,9 @@ def validate_rules(session: Session, customer_id: int) -> dict:
 
 def validate_building_blocks(session: Session, customer_id: int) -> dict:
     session.execute(
-        text("DELETE FROM validation_results WHERE customer_id = :c AND entity_type = 'building_block'"),
+        text(
+            "DELETE FROM validation_results WHERE customer_id = :c AND entity_type = 'building_block'"
+        ),
         {"c": customer_id},
     )
 
@@ -149,7 +153,7 @@ def validate_building_blocks(session: Session, customer_id: int) -> dict:
                 "c": customer_id,
                 "ref": str(qradar_rule_id),
                 "details": f"Ingested building block (identifier={identifier}, name={name!r}) not found in "
-                           f"/analytics/building_blocks.",
+                f"/analytics/building_blocks.",
             },
         )
 
@@ -165,16 +169,19 @@ def validate_building_blocks(session: Session, customer_id: int) -> dict:
                 "c": customer_id,
                 "ref": str(qradar_rule_id),
                 "details": f"Building block in /analytics/building_blocks (identifier={identifier}, name={name!r}) "
-                           f"was not ingested as object_type=BUILDING_BLOCK via rules_with_data.",
+                f"was not ingested as object_type=BUILDING_BLOCK via rules_with_data.",
             },
         )
 
     total_ingested = session.execute(
-        text("SELECT count(*) FROM rules WHERE customer_id = :c AND object_type = 'BUILDING_BLOCK'"),
+        text(
+            "SELECT count(*) FROM rules WHERE customer_id = :c AND object_type = 'BUILDING_BLOCK'"
+        ),
         {"c": customer_id},
     ).scalar_one()
     total_reference = session.execute(
-        text("SELECT count(*) FROM building_blocks_reference WHERE customer_id = :c"), {"c": customer_id}
+        text("SELECT count(*) FROM building_blocks_reference WHERE customer_id = :c"),
+        {"c": customer_id},
     ).scalar_one()
 
     return {

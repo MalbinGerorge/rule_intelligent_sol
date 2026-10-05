@@ -4,9 +4,11 @@ Revision ID: 202609042337
 Revises: 202608252333
 Create Date: 2026-08-28
 """
-from alembic import op
+
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 revision = "202609042337"
 down_revision = "202608252333"
@@ -18,7 +20,12 @@ def upgrade() -> None:
     op.create_table(
         "log_sources_reference",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("customer_id", sa.Integer(), sa.ForeignKey("customers.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "customer_id",
+            sa.Integer(),
+            sa.ForeignKey("customers.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("qradar_log_source_id", sa.BigInteger(), nullable=False),
         sa.Column("name", sa.Text(), nullable=True),
         sa.Column("type_id", sa.BigInteger(), nullable=True),
@@ -27,17 +34,25 @@ def upgrade() -> None:
         sa.Column("last_event_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("average_eps", sa.Float(), nullable=True),
         sa.Column("raw_json", postgresql.JSONB(), nullable=True),
-        sa.Column("synced_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "synced_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
     )
     op.create_unique_constraint(
-        "uq_log_sources_reference_customer_qradar_id", "log_sources_reference", ["customer_id", "qradar_log_source_id"]
+        "uq_log_sources_reference_customer_qradar_id",
+        "log_sources_reference",
+        ["customer_id", "qradar_log_source_id"],
     )
-    op.create_index("ix_log_sources_reference_customer_id", "log_sources_reference", ["customer_id"])
+    op.create_index(
+        "ix_log_sources_reference_customer_id", "log_sources_reference", ["customer_id"]
+    )
     op.create_index("ix_log_sources_reference_type_id", "log_sources_reference", ["type_id"])
 
 
 def downgrade() -> None:
     op.drop_index("ix_log_sources_reference_type_id", table_name="log_sources_reference")
     op.drop_index("ix_log_sources_reference_customer_id", table_name="log_sources_reference")
-    op.drop_constraint("uq_log_sources_reference_customer_qradar_id", "log_sources_reference", type_="unique")
+    op.drop_constraint(
+        "uq_log_sources_reference_customer_qradar_id", "log_sources_reference", type_="unique"
+    )
     op.drop_table("log_sources_reference")

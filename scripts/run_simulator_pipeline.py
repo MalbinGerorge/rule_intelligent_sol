@@ -8,6 +8,7 @@ live QRadar console.
 Usage:
     uv run python scripts/run_simulator_pipeline.py --customer cotecna "Mimikatz credential dump on DC01, caught by Sysmon"
 """
+
 import argparse
 import sys
 from pathlib import Path
@@ -18,15 +19,15 @@ from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
 from app.agent.simulator.attack_interpreter import AttackInterpreterAgent
+from app.agent.simulator.dsm_property_extractor_trial import DSMPropertyExtractor
+from app.agent.simulator.interactive_runner import run_interactive
 from app.agent.simulator.mitre_validator import MitreTechniqueValidator
 from app.agent.simulator.orchestrator import SimulatorOrchestrator
 from app.agent.simulator.reference_log_retriever import ReferenceLogRetriever
-from app.agent.simulator.dsm_property_extractor_trial import DSMPropertyExtractor
-from app.agent.simulator.interactive_runner import run_interactive
-from app.services.qradar_client_factory import build_qradar_client_for_customer
 from app.core.logging_config import configure_logging, configure_simulator_logging
 from app.db.session import engine
 from app.rule_analyzer.llm_provider import LLMProvider
+from app.services.qradar_client_factory import build_qradar_client_for_customer
 
 
 def _short(value: str, limit: int = 80) -> str:
@@ -36,8 +37,10 @@ def _short(value: str, limit: int = 80) -> str:
 def print_extracted(extracted_properties) -> None:
     for index, extracted in enumerate(extracted_properties, start=1):
         regex_count = sum(1 for p in extracted.properties if p.method == "regex")
-        print(f"    Extracted properties, event {index}: {len(extracted.properties)} total, "
-              f"{regex_count} via QRadar expressions")
+        print(
+            f"    Extracted properties, event {index}: {len(extracted.properties)} total, "
+            f"{regex_count} via QRadar expressions"
+        )
         for prop in extracted.properties:
             print(f"      {prop.name} = {_short(prop.value)!r}  ({prop.method})")
         if extracted.skipped_expression_counts:
@@ -58,7 +61,6 @@ def main() -> None:
     db = SessionLocal()
 
     try:
-
         customer_id = db.execute(
             text("SELECT id FROM customers WHERE name = :name"), {"name": args.customer}
         ).scalar_one_or_none()
@@ -74,7 +76,6 @@ def main() -> None:
             validator=MitreTechniqueValidator(db),
             retriever=ReferenceLogRetriever(qradar_client),
             extractor=DSMPropertyExtractor(db, customer_id),
-
         )
 
         result = run_interactive(orchestrator.interpreter, orchestrator, args.narrative)
@@ -87,14 +88,18 @@ def main() -> None:
         for sr in result.step_results:
             step = sr.step
             print(f"\n  Step {step.step_number}: {step.technique_name}")
-            print(f"    MITRE: confirmed={step.mitre_confirmed}, id={step.confirmed_technique_id}, "
-                  f"name={step.confirmed_technique_name}")
+            print(
+                f"    MITRE: confirmed={step.mitre_confirmed}, id={step.confirmed_technique_id}, "
+                f"name={step.confirmed_technique_name}"
+            )
             print(f"    Target: {step.target_server} / {step.target_log_source}")
             if sr.reference_sample:
-                print(f"    Reference: source={sr.reference_sample.source}, "
-                      f"log_source={sr.reference_sample.log_source_name}")
+                print(
+                    f"    Reference: source={sr.reference_sample.source}, "
+                    f"log_source={sr.reference_sample.log_source_name}"
+                )
                 print_extracted(sr.extracted_properties)
-                
+
                 if sr.reference_sample.available_alternatives:
                     print(f"    Did you mean one of: {sr.reference_sample.available_alternatives}")
     finally:

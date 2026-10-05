@@ -31,6 +31,7 @@ reliably regex-matching a WHERE clause's log-source filter out of
 free-form LLM-generated text would be fragile. Explicit, known input
 from the caller is more robust than inferring intent from text.
 """
+
 from __future__ import annotations
 
 import re
@@ -81,12 +82,18 @@ _LAST_N_PATTERN = re.compile(
 _OR_OPERATOR_PATTERN = re.compile(r"\bOR\b", re.IGNORECASE)
 
 _UNIT_TO_DAYS = {
-    "second": 1 / 86400, "seconds": 1 / 86400,
-    "minute": 1 / 1440, "minutes": 1 / 1440,
-    "hour": 1 / 24, "hours": 1 / 24,
-    "day": 1, "days": 1,
-    "week": 7, "weeks": 7,
-    "month": 30, "months": 30,  # approximate -- fine, always exceeds every category's cap anyway
+    "second": 1 / 86400,
+    "seconds": 1 / 86400,
+    "minute": 1 / 1440,
+    "minutes": 1 / 1440,
+    "hour": 1 / 24,
+    "hours": 1 / 24,
+    "day": 1,
+    "days": 1,
+    "week": 7,
+    "weeks": 7,
+    "month": 30,
+    "months": 30,  # approximate -- fine, always exceeds every category's cap anyway
 }
 
 # Absolute START/STOP ranges are NOT currently supported -- deferred
@@ -102,9 +109,7 @@ class UnsafeAQLError(Exception):
 
 def check_select_only(query: str) -> None:
     if not _SELECT_PATTERN.match(query):
-        raise UnsafeAQLError(
-            "Query must start with SELECT. Only read-only searches are permitted."
-        )
+        raise UnsafeAQLError("Query must start with SELECT. Only read-only searches are permitted.")
 
 
 def check_time_bound(query: str, log_source_type: str | None = None) -> None:

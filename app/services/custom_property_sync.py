@@ -9,6 +9,7 @@ refresh correctly handles QRadar-side deletions.
 Intended to run on a schedule (e.g. twice daily) via
 scripts/sync_custom_properties.py.
 """
+
 from __future__ import annotations
 
 import json
@@ -29,7 +30,9 @@ _EXPRESSION_FETCHERS = {
 }
 
 
-def sync_custom_event_properties(db: Session, qradar_client: QRadarClient, customer_id: int) -> dict:
+def sync_custom_event_properties(
+    db: Session, qradar_client: QRadarClient, customer_id: int
+) -> dict:
     """
     Returns:
         {"expressions_synced": int, "builtin_properties_discovered": int,
@@ -60,7 +63,8 @@ def sync_custom_event_properties(db: Session, qradar_client: QRadarClient, custo
                 all_expressions.append((exp_type, item))
 
     db.execute(
-        text("DELETE FROM custom_event_property_expressions WHERE customer_id = :c"), {"c": customer_id}
+        text("DELETE FROM custom_event_property_expressions WHERE customer_id = :c"),
+        {"c": customer_id},
     )
 
     expressions_inserted = 0
@@ -143,8 +147,12 @@ def _flatten_type_specific(exp_type: str, expr: dict) -> dict:
     Unused columns for a given type are explicitly None, not omitted,
     so every INSERT's parameter dict has the same fixed key set."""
     base = {
-        "expression": None, "regex": None, "capture_group": None, "format_string": None,
-        "delimiter_pair": None, "delimiter_name_value": None,
+        "expression": None,
+        "regex": None,
+        "capture_group": None,
+        "format_string": None,
+        "delimiter_pair": None,
+        "delimiter_name_value": None,
     }
     if exp_type == "regex":
         base["regex"] = expr.get("regex")

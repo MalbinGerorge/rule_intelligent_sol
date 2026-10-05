@@ -10,18 +10,18 @@ check_reference_set_contents, and run_aql_event_search are LIVE
 QRadar API tools -- everything else is structural-only, per the
 agreed sequencing.
 """
+
 from __future__ import annotations
 
 import json as _json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.services.qradar_client import QRadarAPIError, QRadarClient
-from app.rule_analyzer.aql_safety import UnsafeAQLError, validate_aql
+from app.rule_analyzer.aql_safety import UnsafeAQLError, _resolve_max_days, validate_aql
 from app.rule_analyzer.rule_chain_context import resolve_identifier_to_rule_id
-from app.rule_analyzer.aql_safety import _resolve_max_days
+from app.services.qradar_client import QRadarAPIError, QRadarClient
 
 
 def _format_time_ago(dt: datetime | None) -> str:
@@ -32,9 +32,9 @@ def _format_time_ago(dt: datetime | None) -> str:
     calculation it might get wrong."""
     if dt is None:
         return "unknown"
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
     delta = now - dt
     seconds = delta.total_seconds()
     if seconds < 3600:
@@ -62,10 +62,14 @@ def check_rule_timing(db: Session, customer_id: int, identifier: str) -> str:
     if rule_id is None:
         return f"No rule/building block found with identifier '{identifier}' for this customer."
 
-    row = db.execute(
-        text("SELECT name, created_at, updated_at FROM rules WHERE id = :rule_id"),
-        {"rule_id": rule_id},
-    ).mappings().first()
+    row = (
+        db.execute(
+            text("SELECT name, created_at, updated_at FROM rules WHERE id = :rule_id"),
+            {"rule_id": rule_id},
+        )
+        .mappings()
+        .first()
+    )
     if row is None:
         return f"No rule found with internal id {rule_id}."
 
@@ -118,16 +122,20 @@ def check_reference_data_dependencies(db: Session, customer_id: int, identifier:
     if rule_id is None:
         return f"No rule/building block found with identifier '{identifier}' for this customer."
 
-    rows = db.execute(
-        text(
-            """
+    rows = (
+        db.execute(
+            text(
+                """
             SELECT test_class, structured_data
             FROM rule_conditions
             WHERE rule_id = :rule_id AND test_class IN ('ReferenceSetTest', 'ReferenceDataTest')
             """
-        ),
-        {"rule_id": rule_id},
-    ).mappings().all()
+            ),
+            {"rule_id": rule_id},
+        )
+        .mappings()
+        .all()
+    )
 
     if not rows:
         return f"'{identifier}' has no reference set/map dependencies in its own conditions."
@@ -152,7 +160,9 @@ def check_reference_data_dependencies(db: Session, customer_id: int, identifier:
     return "This rule depends on the following reference data:\n" + "\n".join(lines) + disclaimer
 
 
-def check_log_source_status(db: Session, qradar_client: QRadarClient, customer_id: int, identifier: str) -> str:
+def check_log_source_status(
+    db: Session, qradar_client: QRadarClient, customer_id: int, identifier: str
+) -> str:
     """
     Checks whether the log source TYPE this rule's/BB's OWN conditions
     require (from a DeviceTypeID_Test condition) has any actual
@@ -190,15 +200,19 @@ def check_log_source_status(db: Session, qradar_client: QRadarClient, customer_i
     if rule_id is None:
         return f"No rule/building block found with identifier '{identifier}' for this customer."
 
-    rows = db.execute(
-        text(
-            """
+    rows = (
+        db.execute(
+            text(
+                """
             SELECT structured_data FROM rule_conditions
             WHERE rule_id = :rule_id AND test_class = 'DeviceTypeID_Test'
             """
-        ),
-        {"rule_id": rule_id},
-    ).mappings().all()
+            ),
+            {"rule_id": rule_id},
+        )
+        .mappings()
+        .all()
+    )
 
     required_type_names: list[str] = []
     for r in rows:
@@ -260,23 +274,31 @@ def check_log_source_status(db: Session, qradar_client: QRadarClient, customer_i
         lines.append("\nDISABLED log source(s):")
         shown = disabled_ones[:MAX_DETAILED_DISABLED]
         for ls in shown:
-            lines.append(f'  - "{ls.get("name")}" (status: {(ls.get("status") or {}).get("status")})')
+            lines.append(
+                f'  - "{ls.get("name")}" (status: {(ls.get("status") or {}).get("status")})'
+            )
         if len(disabled_ones) > MAX_DETAILED_DISABLED:
-            lines.append(f"  ... and {len(disabled_ones) - MAX_DETAILED_DISABLED} more disabled, not shown.")
+            lines.append(
+                f"  ... and {len(disabled_ones) - MAX_DETAILED_DISABLED} more disabled, not shown."
+            )
 
     if not enabled_ones:
         return "\n".join(lines)
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     buckets: dict[str, list[dict]] = {
-        "under_1w": [], "1_to_2w": [], "2_to_3w": [], "over_3w": [], "never": [],
+        "under_1w": [],
+        "1_to_2w": [],
+        "2_to_3w": [],
+        "over_3w": [],
+        "never": [],
     }
     for ls in enabled_ones:
         last_event_ms = ls.get("last_event_time")
         if not last_event_ms:
             buckets["never"].append(ls)
             continue
-        last_event_dt = datetime.fromtimestamp(last_event_ms / 1000, tz=timezone.utc)
+        last_event_dt = datetime.fromtimestamp(last_event_ms / 1000, tz=UTC)
         age_days = (now - last_event_dt).days
         if age_days < 7:
             buckets["under_1w"].append(ls)
@@ -311,7 +333,6 @@ def check_log_source_status(db: Session, qradar_client: QRadarClient, customer_i
     return "\n".join(lines)
 
 
-
 def _normalize_refset_display_name(display_name: str) -> str:
     """QRadar's rule display TEXT wraps the real stored reference set
     name in UI decoration that isn't part of the actual name: a
@@ -328,7 +349,7 @@ def _normalize_refset_display_name(display_name: str) -> str:
 
     for prefix in ("(Shared) ", "(Private) ", "(Tenant) "):
         if name.startswith(prefix):
-            name = name[len(prefix):]
+            name = name[len(prefix) :]
             break
 
     # Longer/more specific suffix checked FIRST -- "AlphaNumeric" is a
@@ -342,7 +363,9 @@ def _normalize_refset_display_name(display_name: str) -> str:
     return name.strip()
 
 
-def check_reference_set_contents(db: Session, qradar_client: QRadarClient, customer_id: int, identifier: str) -> str:
+def check_reference_set_contents(
+    db: Session, qradar_client: QRadarClient, customer_id: int, identifier: str
+) -> str:
     """
     Checks the LIVE, real contents of the reference set(s) that a
     specific rule/building block's own conditions depend on. Takes the
@@ -377,15 +400,19 @@ def check_reference_set_contents(db: Session, qradar_client: QRadarClient, custo
     if rule_id is None:
         return f"No rule/building block found with identifier '{identifier}' for this customer."
 
-    rows = db.execute(
-        text(
-            """
+    rows = (
+        db.execute(
+            text(
+                """
             SELECT structured_data FROM rule_conditions
             WHERE rule_id = :rule_id AND test_class = 'ReferenceSetTest'
             """
-        ),
-        {"rule_id": rule_id},
-    ).mappings().all()
+            ),
+            {"rule_id": rule_id},
+        )
+        .mappings()
+        .all()
+    )
 
     required_set_names: list[str] = []
     for r in rows:
@@ -411,21 +438,29 @@ def check_reference_set_contents(db: Session, qradar_client: QRadarClient, custo
     name_to_set = {s["name"]: s for s in all_sets}
     normalized_to_original = {_normalize_refset_display_name(n): n for n in required_set_names}
     missing = [orig for norm, orig in normalized_to_original.items() if norm not in name_to_set]
-    found = {orig: name_to_set[norm] for norm, orig in normalized_to_original.items() if norm in name_to_set}
+    found = {
+        orig: name_to_set[norm]
+        for norm, orig in normalized_to_original.items()
+        if norm in name_to_set
+    }
 
     lines = []
     if missing:
         lines.append(f"NOT FOUND on the live console (renamed or deleted?): {missing}")
 
     if not found:
-        return "\n".join(lines) if lines else "None of the required reference sets could be resolved."
+        return (
+            "\n".join(lines) if lines else "None of the required reference sets could be resolved."
+        )
 
     try:
         entry_pages = qradar_client.fetch_reference_set_entries()
     except QRadarAPIError as e:
         lines.append(f"Could not fetch entries to sample values: {e}")
         for name, meta in found.items():
-            lines.append(f'  - "{name}": exists, {meta.get("number_of_entries")} entries (sample unavailable)')
+            lines.append(
+                f'  - "{name}": exists, {meta.get("number_of_entries")} entries (sample unavailable)'
+            )
         return "\n".join(lines)
 
     all_entries = []
@@ -526,15 +561,19 @@ def check_field_extraction_configured(
     if rule_id is None:
         return f"No rule/building block found with identifier '{identifier}' for this customer."
 
-    rows = db.execute(
-        text(
-            """
+    rows = (
+        db.execute(
+            text(
+                """
             SELECT structured_data FROM rule_conditions
             WHERE rule_id = :rule_id AND test_class = 'DeviceTypeID_Test'
             """
-        ),
-        {"rule_id": rule_id},
-    ).mappings().all()
+            ),
+            {"rule_id": rule_id},
+        )
+        .mappings()
+        .all()
+    )
     required_type_names: list[str] = []
     for r in rows:
         sd = r["structured_data"] if isinstance(r["structured_data"], dict) else {}
@@ -560,10 +599,16 @@ def check_field_extraction_configured(
     if not matched_ids:
         return f"Required log source type name(s) {required_type_names} not found in QRadar's live type list."
 
-    prop_row = db.execute(
-        text("SELECT id FROM custom_event_properties WHERE customer_id = :customer_id AND name = :name"),
-        {"customer_id": customer_id, "name": field_name},
-    ).mappings().first()
+    prop_row = (
+        db.execute(
+            text(
+                "SELECT id FROM custom_event_properties WHERE customer_id = :customer_id AND name = :name"
+            ),
+            {"customer_id": customer_id, "name": field_name},
+        )
+        .mappings()
+        .first()
+    )
 
     if prop_row is None:
         return (
@@ -572,21 +617,30 @@ def check_field_extraction_configured(
             "This alone would explain the field always being empty."
         )
 
-    expr_rows = db.execute(
-        text(
-            "SELECT expression_type, enabled, log_source_type_id "
-            "FROM custom_event_property_expressions WHERE property_id = :property_id"
-        ),
-        {"property_id": prop_row["id"]},
-    ).mappings().all()
+    expr_rows = (
+        db.execute(
+            text(
+                "SELECT expression_type, enabled, log_source_type_id "
+                "FROM custom_event_property_expressions WHERE property_id = :property_id"
+            ),
+            {"property_id": prop_row["id"]},
+        )
+        .mappings()
+        .all()
+    )
 
-    applicable = [e for e in expr_rows if e["log_source_type_id"] is None or e["log_source_type_id"] in matched_ids]
+    applicable = [
+        e
+        for e in expr_rows
+        if e["log_source_type_id"] is None or e["log_source_type_id"] in matched_ids
+    ]
 
     if not applicable:
         other_count = len(expr_rows)
         extra = (
             f" ({other_count} expression(s) exist for OTHER log source types, but none for {required_type_names})"
-            if other_count else ""
+            if other_count
+            else ""
         )
         return (
             f'NO extraction expression is configured for "{field_name}" on log source type(s) '
@@ -610,7 +664,9 @@ def check_field_extraction_configured(
     return "\n".join(lines)
 
 
-def check_field_population_rate(qradar_client: QRadarClient, field_name: str, qid: int, log_source_type: str) -> str:
+def check_field_population_rate(
+    qradar_client: QRadarClient, field_name: str, qid: int, log_source_type: str
+) -> str:
     """
     DETERMINISTIC (NOT LLM-authored) live check: for the SPECIFIC QID
     this rule requires, is `field_name` actually populated on real
@@ -628,7 +684,7 @@ def check_field_population_rate(qradar_client: QRadarClient, field_name: str, qi
     hours = int(min(12, max_days * 24))
 
     query = (
-        f'SELECT "{field_name}" AS \'Value\', COUNT(*) AS \'Count\' '
+        f"SELECT \"{field_name}\" AS 'Value', COUNT(*) AS 'Count' "
         f"FROM events "
         f"WHERE LOGSOURCETYPENAME(devicetype) = '{log_source_type}' AND QID={qid} "
         f'GROUP BY "{field_name}" '
@@ -655,21 +711,29 @@ def check_field_population_rate(qradar_client: QRadarClient, field_name: str, qi
     null_count = sum(row.get("Count", 0) for row in events if row.get("Value") is None)
     populated_count = total - null_count
 
-    lines = [f'Field "{field_name}" population, for QID={qid}, last {hours} hours ({int(total)} total events):']
-    lines.append(f"  - Populated: {int(populated_count)} ({populated_count/total*100:.0f}%)")
-    lines.append(f"  - Empty/NULL: {int(null_count)} ({null_count/total*100:.0f}%)")
+    lines = [
+        f'Field "{field_name}" population, for QID={qid}, last {hours} hours ({int(total)} total events):'
+    ]
+    lines.append(f"  - Populated: {int(populated_count)} ({populated_count / total * 100:.0f}%)")
+    lines.append(f"  - Empty/NULL: {int(null_count)} ({null_count / total * 100:.0f}%)")
 
     if null_count == total:
-        lines.append("\n  *** ALWAYS EMPTY *** -- this field is NEVER populated on real events for this QID.")
-        lines.append("  This directly explains any rule condition checking this field: it can never match.")
+        lines.append(
+            "\n  *** ALWAYS EMPTY *** -- this field is NEVER populated on real events for this QID."
+        )
+        lines.append(
+            "  This directly explains any rule condition checking this field: it can never match."
+        )
     elif null_count > 0:
-        lines.append(f"\n  Partially populated -- {int(null_count)} of {int(total)} events lack this field, which")
+        lines.append(
+            f"\n  Partially populated -- {int(null_count)} of {int(total)} events lack this field, which"
+        )
         lines.append("  could still cause a rule to miss some matching events.")
 
     lines.append("\nDistinct real values observed:")
     for row in events[:10]:
         val = row.get("Value")
         val_display = "(NULL/empty)" if val is None else f'"{val}"'
-        lines.append(f'  - {val_display}: {int(row.get("Count", 0))} event(s)')
+        lines.append(f"  - {val_display}: {int(row.get('Count', 0))} event(s)")
 
     return "\n".join(lines)

@@ -20,9 +20,11 @@ No UNIQUE constraint on (customer_id, rule_id) -- deliberate: multiple
 rows per rule over time are the whole point, a real history, not a
 single overwritten snapshot.
 """
-from alembic import op
+
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 revision = "3487bfa37cbd"
 down_revision = "354ac644fcc5"
@@ -34,16 +36,27 @@ def upgrade() -> None:
     op.create_table(
         "investigation_reports",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("customer_id", sa.Integer(), sa.ForeignKey("customers.id", ondelete="CASCADE"), nullable=False),
-        sa.Column("rule_id", sa.Integer(), sa.ForeignKey("rules.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "customer_id",
+            sa.Integer(),
+            sa.ForeignKey("customers.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
+        sa.Column(
+            "rule_id", sa.Integer(), sa.ForeignKey("rules.id", ondelete="CASCADE"), nullable=False
+        ),
         sa.Column("chain_analysis", postgresql.JSONB(), nullable=True),
         sa.Column("final_report", postgresql.JSONB(), nullable=True),
         sa.Column("rendered_report", sa.Text(), nullable=True),
         sa.Column("trace", sa.Text(), nullable=True),
         sa.Column("tool_calls_made", sa.Integer(), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
     )
-    op.create_index("ix_investigation_reports_customer_id", "investigation_reports", ["customer_id"])
+    op.create_index(
+        "ix_investigation_reports_customer_id", "investigation_reports", ["customer_id"]
+    )
     op.create_index("ix_investigation_reports_rule_id", "investigation_reports", ["rule_id"])
     op.create_index("ix_investigation_reports_created_at", "investigation_reports", ["created_at"])
 

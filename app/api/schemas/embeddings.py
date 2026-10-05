@@ -1,5 +1,6 @@
 """Schemas for the embedding-generation job API -- mirrors the Sigma
 generation job schemas exactly."""
+
 from __future__ import annotations
 
 from pydantic import BaseModel

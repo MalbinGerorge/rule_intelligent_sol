@@ -11,7 +11,9 @@ class SigmaGenerationJob(Base):
     __tablename__ = "sigma_generation_jobs"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True)
+    customer_id: Mapped[int] = mapped_column(
+        ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     status: Mapped[str] = mapped_column(Text, nullable=False, server_default="running", index=True)
     requested_rule_names: Mapped[list | None] = mapped_column(JSONB)
     total_rules: Mapped[int] = mapped_column(server_default="0", nullable=False)

@@ -21,6 +21,7 @@ Cost: reranking is meaningfully slower per-candidate than embedding
 comparison -- only run it on a SHORTLIST (the top-N from the cheap
 embedding search), never the whole corpus.
 """
+
 from __future__ import annotations
 
 import structlog
@@ -34,6 +35,7 @@ RERANKER_MODEL_NAME = "BAAI/bge-reranker-v2-m3"
 class Reranker:
     def _get_model(self) -> CrossEncoder:
         from app.recommendations.model_registry import get_shared_reranker_model
+
         return get_shared_reranker_model()
 
     def rerank(self, query: str, candidate_texts: list[str]) -> list[float]:
@@ -48,6 +50,11 @@ class Reranker:
         raw_scores = [float(s) for s in scores]
 
         # TEMPORARY -- remove once the "everything shows 50%" issue is diagnosed
-        logger.info("reranker_raw_scores", query=query, raw_scores=raw_scores, candidate_count=len(candidate_texts))
+        logger.info(
+            "reranker_raw_scores",
+            query=query,
+            raw_scores=raw_scores,
+            candidate_count=len(candidate_texts),
+        )
 
         return raw_scores

@@ -6,6 +6,7 @@ schema and from investigation_graph.py, same modularity discipline as
 aql_prompt_templates.py: template content reviewable/tunable on its
 own.
 """
+
 from __future__ import annotations
 
 from jinja2 import Environment

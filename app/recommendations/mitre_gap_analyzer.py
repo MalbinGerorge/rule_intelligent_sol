@@ -22,6 +22,7 @@ Confidentiality boundary: SAME as LogSourceGapAnalyzer -- peer
 suggestions return ONLY de-identified Sigma content, never raw rule
 logic.
 """
+
 from __future__ import annotations
 
 import structlog
@@ -58,7 +59,9 @@ class MitreGapAnalyzer:
 
         catalog = self._get_full_catalog()
         covered_ids = self._get_covered_technique_ids(customer_id)
-        onboarded_names = {row["name"] for row in get_onboarded_log_source_types(self.db, customer_id)}
+        onboarded_names = {
+            row["name"] for row in get_onboarded_log_source_types(self.db, customer_id)
+        }
         logger.info(
             "mitre_gap_analysis_inputs_loaded",
             customer_id=customer_id,
@@ -101,11 +104,15 @@ class MitreGapAnalyzer:
         return gaps
 
     def _get_full_catalog(self) -> list[dict]:
-        rows = self.db.execute(
-            text(
-                "SELECT technique_id, technique_name, tactic_names, is_subtechnique FROM mitre_technique_catalog"
+        rows = (
+            self.db.execute(
+                text(
+                    "SELECT technique_id, technique_name, tactic_names, is_subtechnique FROM mitre_technique_catalog"
+                )
             )
-        ).mappings().all()
+            .mappings()
+            .all()
+        )
         return [dict(r) for r in rows]
 
     def _get_covered_technique_ids(self, customer_id: int) -> set[str]:
@@ -119,17 +126,21 @@ class MitreGapAnalyzer:
         return {r[0] for r in rows}
 
     def _find_peer_rule_matches(self, customer_id: int, technique_id: str) -> list[dict]:
-        rows = self.db.execute(
-            text(
-                """
+        rows = (
+            self.db.execute(
+                text(
+                    """
                 SELECT rmu.rule_id, c.name AS customer_name, rmu.mitre_source, rmu.confidence
                 FROM rule_mitre_unified rmu
                 JOIN customers c ON c.id = rmu.customer_id
                 WHERE rmu.technique_id = :technique_id AND rmu.customer_id <> :customer_id
                 """
-            ),
-            {"technique_id": technique_id, "customer_id": customer_id},
-        ).mappings().all()
+                ),
+                {"technique_id": technique_id, "customer_id": customer_id},
+            )
+            .mappings()
+            .all()
+        )
         return [dict(r) for r in rows]
 
     def _get_required_log_source_types_for_rules(self, rule_ids: list[int]) -> dict[int, list[str]]:
@@ -146,7 +157,9 @@ class MitreGapAnalyzer:
             )
             return {record["rule_id"]: record["log_source_types"] for record in result}
 
-    def _build_suggestions(self, peer_matches: list[dict], onboarded_names: set[str]) -> list[PeerRuleSuggestion]:
+    def _build_suggestions(
+        self, peer_matches: list[dict], onboarded_names: set[str]
+    ) -> list[PeerRuleSuggestion]:
         """Pulls ONLY de-identified Sigma content. Each suggestion is
         checked against onboarded_names (the RECEIVING customer's real
         log sources) -- an empty required_log_source_types means
@@ -158,16 +171,20 @@ class MitreGapAnalyzer:
         rule_ids = [m["rule_id"] for m in peer_matches]
         match_by_rule_id = {m["rule_id"]: m for m in peer_matches}
 
-        rows = self.db.execute(
-            text(
-                """
+        rows = (
+            self.db.execute(
+                text(
+                    """
                 SELECT rule_id, title, description, level, detection, tags
                 FROM rule_yaml_representations
                 WHERE rule_id = ANY(:rule_ids) AND role IN ('standalone', 'base')
                 """
-            ),
-            {"rule_ids": rule_ids},
-        ).mappings().all()
+                ),
+                {"rule_ids": rule_ids},
+            )
+            .mappings()
+            .all()
+        )
 
         required_types_by_rule = self._get_required_log_source_types_for_rules(rule_ids)
 

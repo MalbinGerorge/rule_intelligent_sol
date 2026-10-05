@@ -7,8 +7,10 @@ before wiring it into an API.
 Usage:
     uv run python scripts/check_mitre_gaps.py --name cotecna
 """
+
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import argparse
@@ -17,7 +19,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
 from app.db.session import engine
-from app.graph.client import get_driver, close_driver
+from app.graph.client import close_driver, get_driver
 from app.recommendations.mitre_gap_analyzer import MitreGapAnalyzer
 
 
@@ -55,10 +57,16 @@ def main() -> None:
             print(f"  Tactics: {', '.join(g.tactic_names)}")
             print(f"  Peers: {g.peer_customer_names}")
             for s in g.suggested_rules:
-                feasible = "OK" if s.customer_has_required_log_source else "BLOCKED (missing log source)"
-                print(f"    - [{s.source_customer_name}] {s.title} "
-                      f"(level: {s.level}, mitre_source: {s.mitre_source}, confidence: {s.mitre_confidence})")
-                print(f"        requires: {s.required_log_source_types or ['unknown']} -> {feasible}")
+                feasible = (
+                    "OK" if s.customer_has_required_log_source else "BLOCKED (missing log source)"
+                )
+                print(
+                    f"    - [{s.source_customer_name}] {s.title} "
+                    f"(level: {s.level}, mitre_source: {s.mitre_source}, confidence: {s.mitre_confidence})"
+                )
+                print(
+                    f"        requires: {s.required_log_source_types or ['unknown']} -> {feasible}"
+                )
 
         print(f"\n=== GAPS WITH NO PEER COVERAGE ({len(no_peer)}) ===")
         for g in no_peer[:20]:

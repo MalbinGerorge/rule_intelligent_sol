@@ -19,8 +19,10 @@ appear there. Rather than discard this real, useful mapping (built-in
 fields are arguably used MORE often in real AQL queries than custom
 ones), this column lets both live in the same table, clearly labeled.
 """
-from alembic import op
+
 import sqlalchemy as sa
+
+from alembic import op
 
 revision = "354ac644fcc5"
 down_revision = "ea8c6f14d460"

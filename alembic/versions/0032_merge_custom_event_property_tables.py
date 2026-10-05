@@ -8,8 +8,10 @@ full-refresh sync (see custom_property_sync.py's own docstring) --
 nothing here is hand-entered or unrecoverable. A fresh sync run
 repopulates everything immediately after this migration.
 """
-from alembic import op
+
 import sqlalchemy as sa
+
+from alembic import op
 
 revision = "202609271707"
 down_revision = "202609111828"
@@ -24,8 +26,12 @@ def upgrade() -> None:
     op.create_table(
         "custom_event_property_expressions",
         sa.Column("id", sa.Integer(), sa.Identity(always=False), primary_key=True),
-        sa.Column("customer_id", sa.Integer(), sa.ForeignKey("customers.id", ondelete="CASCADE"), nullable=False),
-
+        sa.Column(
+            "customer_id",
+            sa.Integer(),
+            sa.ForeignKey("customers.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         # Denormalized from the old parent table -- repeated per row
         # deliberately, safe here since this is a full-refresh sync,
         # not hand-maintained data.
@@ -34,7 +40,6 @@ def upgrade() -> None:
         sa.Column("property_type", sa.Text(), nullable=True),
         sa.Column("use_for_rule_engine", sa.Boolean(), nullable=True),
         sa.Column("is_builtin_field", sa.Boolean(), nullable=False, server_default="false"),
-
         # The expression itself
         sa.Column("qradar_identifier", sa.Text(), nullable=False),
         sa.Column("expression_type", sa.Text(), nullable=False),
@@ -43,7 +48,6 @@ def upgrade() -> None:
         sa.Column("log_source_id", sa.Integer(), nullable=True),
         sa.Column("qid", sa.Integer(), nullable=True),
         sa.Column("low_level_category_id", sa.Integer(), nullable=True),
-
         # Flattened, type-specific -- only the relevant columns
         # populated per expression_type, per our confirmed real data:
         # regex uses regex/capture_group/format_string; nvp uses
@@ -55,8 +59,9 @@ def upgrade() -> None:
         sa.Column("format_string", sa.Text(), nullable=True),
         sa.Column("delimiter_pair", sa.Text(), nullable=True),
         sa.Column("delimiter_name_value", sa.Text(), nullable=True),
-
-        sa.Column("synced_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "synced_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
     )
 
     op.create_index(

@@ -1,6 +1,7 @@
 """Rules API — thin HTTP layer. No SQL here (that's app/services/rule_query.py).
 Converts service-layer dicts into API schemas (app/api/schemas/rule.py) —
 that conversion happens here, not in the service layer."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query

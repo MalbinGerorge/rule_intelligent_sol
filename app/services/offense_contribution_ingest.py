@@ -7,10 +7,11 @@ rules.id via a lookup. Contributions whose rule_id isn't found yet are
 skipped and counted, not silently dropped, so ingestion order issues are
 visible rather than hidden.
 """
+
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -19,10 +20,12 @@ from sqlalchemy.orm import Session
 def _epoch_ms_to_dt(value) -> datetime | None:
     if value is None:
         return None
-    return datetime.fromtimestamp(value / 1000, tz=timezone.utc)
+    return datetime.fromtimestamp(value / 1000, tz=UTC)
 
 
-def upsert_offense_contributions(session: Session, customer_id: int, pages: list[str]) -> tuple[int, int]:
+def upsert_offense_contributions(
+    session: Session, customer_id: int, pages: list[str]
+) -> tuple[int, int]:
     """Returns (upserted_count, skipped_no_matching_rule_count)."""
     upserted = 0
     skipped = 0
@@ -31,7 +34,9 @@ def upsert_offense_contributions(session: Session, customer_id: int, pages: list
         for c in records:
             qradar_rule_id = c.get("rule_id")
             local_rule_id = session.execute(
-                text("SELECT id FROM rules WHERE customer_id = :customer_id AND qradar_rule_id = :qradar_rule_id"),
+                text(
+                    "SELECT id FROM rules WHERE customer_id = :customer_id AND qradar_rule_id = :qradar_rule_id"
+                ),
                 {"customer_id": customer_id, "qradar_rule_id": qradar_rule_id},
             ).scalar_one_or_none()
 
@@ -74,7 +79,9 @@ def upsert_offense_contributions(session: Session, customer_id: int, pages: list
                     "qradar_rule_id": qradar_rule_id,
                     "rule_name": c.get("rule_name"),
                     "rule_type": c.get("rule_type"),
-                    "offense_id": str(c.get("offense_id")) if c.get("offense_id") is not None else None,
+                    "offense_id": str(c.get("offense_id"))
+                    if c.get("offense_id") is not None
+                    else None,
                     "event_count": c.get("event_count"),
                     "first_event_epoch_ms": c.get("first_event"),
                     "last_event_epoch_ms": c.get("last_event"),

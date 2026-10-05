@@ -11,9 +11,11 @@ github.com/mitre-attack/attack-stix-data). Used by MitreGapAnalyzer
 to compare a customer's ACTUAL technique coverage (rule_mitre_unified)
 against the full official framework, not just what's been observed.
 """
-from alembic import op
+
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 revision = "202609081537"
 down_revision = "202609042337"
@@ -30,13 +32,21 @@ def upgrade() -> None:
         sa.Column("tactic_names", postgresql.ARRAY(sa.Text()), nullable=True),
         sa.Column("is_subtechnique", sa.Boolean(), nullable=False, server_default="false"),
         sa.Column("parent_technique_id", sa.Text(), nullable=True),
-        sa.Column("synced_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "synced_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
     )
-    op.create_unique_constraint("uq_mitre_technique_catalog_technique_id", "mitre_technique_catalog", ["technique_id"])
-    op.create_index("ix_mitre_technique_catalog_technique_id", "mitre_technique_catalog", ["technique_id"])
+    op.create_unique_constraint(
+        "uq_mitre_technique_catalog_technique_id", "mitre_technique_catalog", ["technique_id"]
+    )
+    op.create_index(
+        "ix_mitre_technique_catalog_technique_id", "mitre_technique_catalog", ["technique_id"]
+    )
 
 
 def downgrade() -> None:
     op.drop_index("ix_mitre_technique_catalog_technique_id", table_name="mitre_technique_catalog")
-    op.drop_constraint("uq_mitre_technique_catalog_technique_id", "mitre_technique_catalog", type_="unique")
+    op.drop_constraint(
+        "uq_mitre_technique_catalog_technique_id", "mitre_technique_catalog", type_="unique"
+    )
     op.drop_table("mitre_technique_catalog")

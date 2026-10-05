@@ -15,6 +15,7 @@ call.
 Bounded by MAX_ITERATIONS, same principle as the Q&A agent's
 MAX_RETRIES -- never an unbounded loop, confirmed via test.
 """
+
 from __future__ import annotations
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
@@ -24,9 +25,8 @@ from sqlalchemy.orm import Session
 from app.rule_analyzer.investigation_nodes import build_nodes
 from app.rule_analyzer.investigation_state import InvestigationState
 from app.rule_analyzer.llm_provider import LLMProvider
-from app.services.qradar_client import QRadarClient
 from app.rule_analyzer.report_renderer import render_report
-
+from app.services.qradar_client import QRadarClient
 
 MAX_ITERATIONS = 4
 
@@ -43,7 +43,9 @@ def route_after_investigate(state: InvestigationState) -> str:
     return "execute_tools"
 
 
-def build_investigation_graph(db: Session, customer_id: int, llm_provider: LLMProvider, qradar_client: QRadarClient):
+def build_investigation_graph(
+    db: Session, customer_id: int, llm_provider: LLMProvider, qradar_client: QRadarClient
+):
     nodes = build_nodes(db, customer_id, llm_provider, qradar_client)
 
     graph = StateGraph(InvestigationState)
@@ -53,9 +55,13 @@ def build_investigation_graph(db: Session, customer_id: int, llm_provider: LLMPr
     graph.add_node("synthesize_report", nodes["synthesize_report"])
 
     graph.set_entry_point("analyze_chain")
-    graph.add_conditional_edges("analyze_chain", route_after_analyze, {"investigate": "investigate", "end": END})
     graph.add_conditional_edges(
-        "investigate", route_after_investigate, {"execute_tools": "execute_tools", "synthesize": "synthesize_report"}
+        "analyze_chain", route_after_analyze, {"investigate": "investigate", "end": END}
+    )
+    graph.add_conditional_edges(
+        "investigate",
+        route_after_investigate,
+        {"execute_tools": "execute_tools", "synthesize": "synthesize_report"},
     )
     graph.add_edge("execute_tools", "investigate")
     graph.add_edge("synthesize_report", END)
@@ -107,7 +113,11 @@ def format_investigation_trace(messages: list[BaseMessage]) -> str:
 
 
 def run_investigation(
-    db: Session, llm_provider: LLMProvider, qradar_client: QRadarClient, customer_id: int, rule_id: int
+    db: Session,
+    llm_provider: LLMProvider,
+    qradar_client: QRadarClient,
+    customer_id: int,
+    rule_id: int,
 ) -> dict:
     graph = build_investigation_graph(db, customer_id, llm_provider, qradar_client)
     final_state = graph.invoke({"rule_id": rule_id, "customer_id": customer_id})

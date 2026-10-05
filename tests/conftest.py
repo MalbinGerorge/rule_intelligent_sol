@@ -15,6 +15,7 @@ before anything is created or dropped.
 Tests that need real external services (LLMs, QRadar, Chroma, dev data)
 live in evals/ instead and are run by hand, not by `pytest`.
 """
+
 import os
 
 from dotenv import dotenv_values
@@ -34,10 +35,10 @@ TEST_DB_NAME = (
 os.environ["POSTGRES_DB_NAME"] = TEST_DB_NAME
 
 import pytest
-from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine, text
 
+from alembic import command
 from app.core.config import settings
 from app.db.session import engine
 
