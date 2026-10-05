@@ -1,4 +1,5 @@
 """State schema for the Rule Analyzer's ReAct investigation graph."""
+
 from __future__ import annotations
 
 from typing import TypedDict

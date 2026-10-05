@@ -36,6 +36,7 @@ Confidentiality boundary: SAME as LogSourceGapAnalyzer/MitreGapAnalyzer
 -- pulls ONLY de-identified content from rule_yaml_representations,
 never raw rule_conditions.
 """
+
 from __future__ import annotations
 
 import math
@@ -80,7 +81,6 @@ def _sigmoid(x: float) -> float:
     return 1 / (1 + math.exp(-x))
 
 
-
 class SimilaritySearchService:
     def __init__(self, db: Session, reranker: Reranker | None = None):
         self.db = db
@@ -89,6 +89,7 @@ class SimilaritySearchService:
 
     def _get_model(self) -> SentenceTransformer:
         from app.recommendations.model_registry import get_shared_embedding_model
+
         return get_shared_embedding_model()
 
     def _get_collection(self):
@@ -137,18 +138,21 @@ class SimilaritySearchService:
                 for rid in candidate_rule_ids
             ],
         )
-        
 
-        rows = self.db.execute(
-            text(
-                """
+        rows = (
+            self.db.execute(
+                text(
+                    """
                 SELECT rule_id, title, description, level, detection, tags
                 FROM rule_yaml_representations
                 WHERE rule_id = ANY(:rule_ids) AND role IN ('standalone', 'base')
                 """
-            ),
-            {"rule_ids": candidate_rule_ids},
-        ).mappings().all()
+                ),
+                {"rule_ids": candidate_rule_ids},
+            )
+            .mappings()
+            .all()
+        )
 
         # Stage 2: rerank the WHOLE shortlist -- same text
         # representation as embedding generation, for consistency.
@@ -213,4 +217,6 @@ class SimilaritySearchService:
             excluded_low_relevance=excluded_low_relevance,
             duration_ms=duration_ms,
         )
-        return SimilaritySearchResult(results=suggestions, excluded_low_relevance=excluded_low_relevance)
+        return SimilaritySearchResult(
+            results=suggestions, excluded_low_relevance=excluded_low_relevance
+        )

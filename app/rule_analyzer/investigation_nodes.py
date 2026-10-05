@@ -4,6 +4,7 @@ at each step. Graph STRUCTURE (which nodes exist, how they connect,
 routing logic) lives in investigation_graph.py; this file is purely
 the implementation each node executes when the graph reaches it.
 """
+
 from __future__ import annotations
 
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
@@ -105,7 +106,9 @@ def build_tools(db: Session, customer_id: int, qradar_client: QRadarClient):
     @tool
     def check_field_extraction(identifier: str, field_name: str) -> str:
         """Check whether ANY extraction (regex/JSON/XML/CEF/LEEF/NVP/AQL) is even configured for a custom field, on the log source type this rule/BB requires. Pass the IDENTIFIER string shown in the rule chain and the exact field name the rule's condition checks (e.g. "Policy Action"). Use this FIRST, before check_field_population -- if no extraction is configured at all, that alone explains an always-empty field with no live event data needed."""
-        return check_field_extraction_configured(db, qradar_client, customer_id, identifier, field_name)
+        return check_field_extraction_configured(
+            db, qradar_client, customer_id, identifier, field_name
+        )
 
     @tool
     def check_field_population(field_name: str, qid: int, log_source_type: str) -> str:
@@ -151,7 +154,9 @@ def build_tools(db: Session, customer_id: int, qradar_client: QRadarClient):
     ]
 
 
-def build_nodes(db: Session, customer_id: int, llm_provider: LLMProvider, qradar_client: QRadarClient) -> dict:
+def build_nodes(
+    db: Session, customer_id: int, llm_provider: LLMProvider, qradar_client: QRadarClient
+) -> dict:
     """Builds and returns the 4 node functions as a dict keyed by node
     name, ready to be registered onto a StateGraph by
     investigation_graph.py. Kept as ONE factory (rather than 4
@@ -195,7 +200,11 @@ def build_nodes(db: Session, customer_id: int, llm_provider: LLMProvider, qradar
         tool_messages = []
         for tool_call in last_message.tool_calls:
             tool_fn = tool_map.get(tool_call["name"])
-            result = tool_fn.invoke(tool_call["args"]) if tool_fn else f"Unknown tool: {tool_call['name']}"
+            result = (
+                tool_fn.invoke(tool_call["args"])
+                if tool_fn
+                else f"Unknown tool: {tool_call['name']}"
+            )
             tool_messages.append(ToolMessage(content=str(result), tool_call_id=tool_call["id"]))
         return {
             **state,
@@ -225,5 +234,3 @@ def build_nodes(db: Session, customer_id: int, llm_provider: LLMProvider, qradar
         "execute_tools": execute_tools_node,
         "synthesize_report": synthesize_report_node,
     }
-
- 

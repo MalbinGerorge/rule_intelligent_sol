@@ -3,6 +3,7 @@ LangGraph state schema for the NL-to-Cypher agent graph. Kept as a
 plain TypedDict — LangGraph's convention — not a Pydantic model, so it
 stays a plain serializable dict as it flows node to node.
 """
+
 from __future__ import annotations
 
 from typing import TypedDict

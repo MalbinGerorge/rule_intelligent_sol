@@ -2,6 +2,7 @@
 System prompts for the Rule Simulator's agent pipeline. One file, so
 every agent's instructions can be reviewed and tuned side by side.
 """
+
 from __future__ import annotations
 
 ATTACK_INTERPRETER_SYSTEM_PROMPT = """You are the Attack Interpreter for a QRadar rule simulator.

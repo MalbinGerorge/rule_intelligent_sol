@@ -24,6 +24,7 @@ Adminer, before this migration existed), the DROP TABLE IF EXISTS
 below cleans that up so this migration becomes the single source of
 truth for its schema going forward.
 """
+
 import sqlalchemy as sa
 
 from alembic import op

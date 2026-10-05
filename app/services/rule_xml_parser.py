@@ -15,6 +15,7 @@ match; getDevices (a device picker, unrelated to BB refs) does NOT.
 userSelection can be a single identifier or a comma-separated list
 (seen in real data: "SYSTEM-1202, SYSTEM-1179").
 """
+
 from __future__ import annotations
 
 import logging

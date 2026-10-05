@@ -2,6 +2,7 @@
 AI agent API — natural language question -> Cypher -> graph results.
 Thin HTTP layer only; all real logic lives in app/agent/*.
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter

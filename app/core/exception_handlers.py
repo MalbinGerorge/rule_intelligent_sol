@@ -14,6 +14,7 @@ Deliberately OMITTED vs. the reference this was adapted from:
     kept in the table below for when that's eventually added, but
     nothing currently raises them.
 """
+
 from __future__ import annotations
 
 import uuid
@@ -56,7 +57,7 @@ def format_validation_errors(raw_errors: list[dict]) -> list[dict[str, str]]:
         loc = [str(p) for p in err["loc"] if p not in _LOCATION_SEGMENTS]
         msg = err["msg"]
         if msg.startswith(_VALUE_ERROR_PREFIX):
-            msg = msg[len(_VALUE_ERROR_PREFIX):]
+            msg = msg[len(_VALUE_ERROR_PREFIX) :]
         item: dict[str, str] = {}
         if loc:
             item["field"] = ".".join(loc)

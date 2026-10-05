@@ -18,13 +18,23 @@ rejected at startup too.
 Per-customer QRadar host/token live in the `customers` /
 `customer_credentials` tables, not here, since this is multi-tenant.
 """
+
 from urllib.parse import quote_plus
 
 from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 MIN_SECRET_LENGTH = 16
-KNOWN_WEAK_SECRETS = {"", "change-me", "change-me-dev-only", "changeme", "password", "postgres", "neo4j", "qradar"}
+KNOWN_WEAK_SECRETS = {
+    "",
+    "change-me",
+    "change-me-dev-only",
+    "changeme",
+    "password",
+    "postgres",
+    "neo4j",
+    "qradar",
+}
 
 
 class Settings(BaseSettings):
@@ -75,7 +85,12 @@ class Settings(BaseSettings):
             return self
         weak = [
             name
-            for name in ("postgres_password", "neo4j_password", "redis_password", "token_encryption_key")
+            for name in (
+                "postgres_password",
+                "neo4j_password",
+                "redis_password",
+                "token_encryption_key",
+            )
             if (value := getattr(self, name).get_secret_value()).lower() in KNOWN_WEAK_SECRETS
             or len(value) < MIN_SECRET_LENGTH
         ]

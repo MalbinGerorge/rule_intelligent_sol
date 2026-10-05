@@ -16,6 +16,7 @@ LLM call in a test).
 
 Run: uv run pytest evals/simulator/test_simulator_pipeline_eval.py -v -s
 """
+
 from __future__ import annotations
 
 import sys
@@ -41,7 +42,9 @@ TEST_CUSTOMER_NAME = "cotecna"
 
 # FILL IN: real, exact log source names from your own QRadar console.
 WINDOWS_LOG_SOURCE_1 = "[Cotecna] - [Windows] - [Server] - GVADEVSQL01"
-WINDOWS_LOG_SOURCE_2 = "[Cotecna] - [Windows] - [Server] - GVADEVSQL01"  # fill in a 2nd real one if you have it
+WINDOWS_LOG_SOURCE_2 = (
+    "[Cotecna] - [Windows] - [Server] - GVADEVSQL01"  # fill in a 2nd real one if you have it
+)
 
 EVAL_CASES = [
     {

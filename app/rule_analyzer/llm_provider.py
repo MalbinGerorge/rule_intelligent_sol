@@ -16,6 +16,7 @@ Kept as ONE class with two methods, not two separate free functions,
 so callers depend on a single injectable object -- easier to swap
 out/mock in tests than importing two module-level functions directly.
 """
+
 from __future__ import annotations
 
 from langchain_openai import AzureChatOpenAI

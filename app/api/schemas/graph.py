@@ -7,6 +7,7 @@ instead of forcing every possible field onto one rigid schema, same
 flexible-JSON philosophy already used for rule_conditions.structured_data
 on the Postgres side.
 """
+
 from __future__ import annotations
 
 from typing import Any

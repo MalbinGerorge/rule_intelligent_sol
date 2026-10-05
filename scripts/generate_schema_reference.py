@@ -7,6 +7,7 @@ a relationship renamed, etc. Not called on every agent request.
 Usage:
     uv run python scripts/generate_schema_reference.py
 """
+
 import sys
 from pathlib import Path
 

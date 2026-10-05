@@ -23,6 +23,7 @@ Known limits (kept visible via skipped_expression_counts, not hidden):
   - QRadar uses Java regex, this uses Python's `re`. Patterns that
     don't compile are skipped and counted ('invalid_regex').
 """
+
 from __future__ import annotations
 
 import re
@@ -47,7 +48,9 @@ class DSMPropertyExtractor:
         self.db = db
         self.customer_id = customer_id
 
-    def extract(self, payload: str, log_source_type_id: int | None, log_source_id: int | None) -> ExtractedProperties:
+    def extract(
+        self, payload: str, log_source_type_id: int | None, log_source_id: int | None
+    ) -> ExtractedProperties:
         started_at = time.perf_counter()
         skipped: dict[str, int] = {}
 
@@ -66,7 +69,9 @@ class DSMPropertyExtractor:
                     name=expr["property_name"], value=value, method="regex"
                 )
 
-        result = ExtractedProperties(properties=list(found.values()), skipped_expression_counts=skipped)
+        result = ExtractedProperties(
+            properties=list(found.values()), skipped_expression_counts=skipped
+        )
         logger.info(
             "dsm_properties_extracted",
             customer_id=self.customer_id,
@@ -93,7 +98,6 @@ class DSMPropertyExtractor:
             results.append(self.extract(payload, sample.log_source_type_id, sample.log_source_id))
         return results
 
-
     def _extract_generic_nvp(self, payload: str) -> list[ExtractedProperty]:
         properties = []
         for index, segment in enumerate(payload.strip().split("\t")):
@@ -107,13 +111,18 @@ class DSMPropertyExtractor:
                 key = key.split()[-1]
             if not _KEY_PATTERN.match(key):
                 continue
-            properties.append(ExtractedProperty(name=key, value=value.strip(), method="nvp_generic"))
+            properties.append(
+                ExtractedProperty(name=key, value=value.strip(), method="nvp_generic")
+            )
         return properties
 
-    def _load_applicable_expressions(self, log_source_type_id: int | None, log_source_id: int | None) -> list[dict]:
-        rows = self.db.execute(
-            text(
-                """
+    def _load_applicable_expressions(
+        self, log_source_type_id: int | None, log_source_id: int | None
+    ) -> list[dict]:
+        rows = (
+            self.db.execute(
+                text(
+                    """
                 SELECT id, property_name, expression_type, regex, capture_group
                 FROM custom_event_property_expressions
                 WHERE customer_id = :customer_id
@@ -122,14 +131,17 @@ class DSMPropertyExtractor:
                   AND (log_source_id = :source_id OR log_source_id = :any)
                 ORDER BY id
                 """
-            ),
-            {
-                "customer_id": self.customer_id,
-                "type_id": log_source_type_id if log_source_type_id is not None else ANY,
-                "source_id": log_source_id if log_source_id is not None else ANY,
-                "any": ANY,
-            },
-        ).mappings().all()
+                ),
+                {
+                    "customer_id": self.customer_id,
+                    "type_id": log_source_type_id if log_source_type_id is not None else ANY,
+                    "source_id": log_source_id if log_source_id is not None else ANY,
+                    "any": ANY,
+                },
+            )
+            .mappings()
+            .all()
+        )
         return [dict(r) for r in rows]
 
     def _apply_regex(self, expr: dict, payload: str, skipped: dict[str, int]) -> str | None:

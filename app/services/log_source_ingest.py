@@ -4,6 +4,7 @@ real "onboarded" signal, distinct from log_source_types_reference's
 software-catalog data. Same upsert pattern as everywhere else in this
 project: pull once, cache, join against it going forward.
 """
+
 from __future__ import annotations
 
 import json
@@ -50,7 +51,9 @@ def upsert_log_sources_reference(session: Session, customer_id: int, pages: list
                     "enabled": r.get("enabled"),
                     "status": status_obj.get("status"),
                     "last_event_at": (
-                        datetime.fromtimestamp(last_event_ms / 1000, tz=UTC) if last_event_ms else None
+                        datetime.fromtimestamp(last_event_ms / 1000, tz=UTC)
+                        if last_event_ms
+                        else None
                     ),
                     "average_eps": r.get("average_eps"),
                     "raw_json": json.dumps(r),

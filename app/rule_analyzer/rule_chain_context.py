@@ -24,6 +24,7 @@ built and superseded:
     rule's identifier was never rendered anywhere, causing the LLM to
     guess a wrong value (0) when trying to call a tool on itself.
 """
+
 from __future__ import annotations
 
 import json
@@ -88,7 +89,9 @@ def format_rule_chain_for_llm(chain: dict) -> str:
                     f"grouped by {threshold.get('threshold_grouping_field')}"
                 )
             else:
-                lines.append(f"  - {ref.get('name')} (identifier: {ref.get('identifier')}) -- plain reference")
+                lines.append(
+                    f"  - {ref.get('name')} (identifier: {ref.get('identifier')}) -- plain reference"
+                )
         lines.append("")
     else:
         lines.append("REFERENCED BUILDING BLOCKS: none")
@@ -101,7 +104,9 @@ def format_rule_chain_for_llm(chain: dict) -> str:
             lines.append(f"  - {c.get('raw_text') or c.get('test_class')}{negated}")
         lines.append("")
     else:
-        lines.append("CONDITIONS: none standalone -- logic is entirely composed via referenced building blocks above")
+        lines.append(
+            "CONDITIONS: none standalone -- logic is entirely composed via referenced building blocks above"
+        )
         lines.append("")
 
     if chain["mitre"]:
@@ -115,7 +120,11 @@ def format_rule_chain_for_llm(chain: dict) -> str:
         lines.append("SEQUENCE RELATIONSHIPS THIS RULE DEFINES:")
         for f in chain["followed_by"]:
             rel = f.get("relationship") or {}
-            time_info = f" within {rel.get('time_value')} {rel.get('time_unit')}" if rel.get("time_value") else ""
+            time_info = (
+                f" within {rel.get('time_value')} {rel.get('time_unit')}"
+                if rel.get("time_value")
+                else ""
+            )
             lines.append(f"  - {f.get('source_name')} -> {f.get('target_name')}{time_info}")
         lines.append("")
 
@@ -129,17 +138,21 @@ def fetch_sequential_chain(db: Session, rule_id: int) -> list[dict] | None:
     rule has no rows at all (doesn't exist, or genuinely has zero
     conditions parsed -- caller should distinguish via a separate rule
     existence check if that matters)."""
-    rows = db.execute(
-        text(
-            """
+    rows = (
+        db.execute(
+            text(
+                """
             SELECT test_class, negated, raw_text, structured_data
             FROM rule_conditions
             WHERE rule_id = :rule_id
             ORDER BY sequence_order
             """
-        ),
-        {"rule_id": rule_id},
-    ).mappings().all()
+            ),
+            {"rule_id": rule_id},
+        )
+        .mappings()
+        .all()
+    )
 
     if not rows:
         return None
@@ -149,7 +162,9 @@ def fetch_sequential_chain(db: Session, rule_id: int) -> list[dict] | None:
             "test_class": r["test_class"],
             "negated": r["negated"],
             "raw_text": r["raw_text"],
-            "structured_data": r["structured_data"] if isinstance(r["structured_data"], dict) else json.loads(r["structured_data"]),
+            "structured_data": r["structured_data"]
+            if isinstance(r["structured_data"], dict)
+            else json.loads(r["structured_data"]),
         }
         for r in rows
     ]
@@ -161,10 +176,14 @@ def fetch_rule_response(db: Session, rule_id: int) -> dict | None:
     Returns None if the rule has no <responses> at all (common for
     BBs, which typically don't dispatch anything independently -- but
     checked for every rule/BB anyway, not assumed)."""
-    row = db.execute(
-        text("SELECT * FROM rule_responses WHERE rule_id = :rule_id"),
-        {"rule_id": rule_id},
-    ).mappings().first()
+    row = (
+        db.execute(
+            text("SELECT * FROM rule_responses WHERE rule_id = :rule_id"),
+            {"rule_id": rule_id},
+        )
+        .mappings()
+        .first()
+    )
     return dict(row) if row is not None else None
 
 
@@ -180,13 +199,15 @@ def format_rule_response_for_llm(resp: dict) -> list[str]:
 
     if resp.get("event_name"):
         lines.append(
-            f"    Dispatches new event: \"{resp['event_name']}\" "
+            f'    Dispatches new event: "{resp["event_name"]}" '
             f"(severity {resp.get('severity')}, credibility {resp.get('credibility')}, "
             f"relevance {resp.get('relevance')})"
         )
 
     if resp.get("force_offense_creation") is True:
-        lines.append("    Offense creation: FORCED -- this WILL create a new offense if none exists yet")
+        lines.append(
+            "    Offense creation: FORCED -- this WILL create a new offense if none exists yet"
+        )
     elif resp.get("force_offense_creation") is False:
         lines.append(
             "    Offense creation: NOT FORCED -- WARNING: even if every condition above matches "
@@ -209,7 +230,7 @@ def format_rule_response_for_llm(resp: dict) -> list[str]:
 
     if resp.get("ref_write_target_name"):
         lines.append(
-            f"    Writes to reference data: \"{resp['ref_write_target_name']}\" "
+            f'    Writes to reference data: "{resp["ref_write_target_name"]}" '
             f"(key: {resp.get('ref_write_key_field')}, type: {resp.get('ref_write_type')})"
         )
 
@@ -225,9 +246,11 @@ def fetch_rule_scope(db: Session, rule_id: int) -> str | None:
     was entirely missing from the reconstructed sequence. No new
     column needed -- rule_xml is already stored; this just reads an
     attribute from it that was never read before."""
-    row = db.execute(
-        text("SELECT raw_json FROM rules WHERE id = :rule_id"), {"rule_id": rule_id}
-    ).mappings().first()
+    row = (
+        db.execute(text("SELECT raw_json FROM rules WHERE id = :rule_id"), {"rule_id": rule_id})
+        .mappings()
+        .first()
+    )
     if row is None or not row["raw_json"]:
         return None
 
@@ -297,9 +320,11 @@ def fetch_full_chain_with_dependencies(
     traversal producing a flat "dependencies" list with parent labels,
     rendered as a separate appendix by format_full_chain_for_llm.
     """
-    root_row = db.execute(
-        text("SELECT name FROM rules WHERE id = :id"), {"id": root_rule_id}
-    ).mappings().first()
+    root_row = (
+        db.execute(text("SELECT name FROM rules WHERE id = :id"), {"id": root_rule_id})
+        .mappings()
+        .first()
+    )
     if root_row is None:
         return None
 
@@ -314,9 +339,13 @@ def fetch_full_chain_with_dependencies(
             continue
         visited.add(current_rule_id)
 
-        rule_row = db.execute(
-            text("SELECT identifier, name FROM rules WHERE id = :id"), {"id": current_rule_id}
-        ).mappings().first()
+        rule_row = (
+            db.execute(
+                text("SELECT identifier, name FROM rules WHERE id = :id"), {"id": current_rule_id}
+            )
+            .mappings()
+            .first()
+        )
         if rule_row is None:
             continue
 
@@ -430,9 +459,13 @@ def _format_chain_recursive(
         return [f"{'  ' * depth}[cyclic or too-deep reference, stopped here]"]
     visited = visited | {rule_id}
 
-    rule_row = db.execute(
-        text("SELECT identifier, name, enabled FROM rules WHERE id = :id"), {"id": rule_id}
-    ).mappings().first()
+    rule_row = (
+        db.execute(
+            text("SELECT identifier, name, enabled FROM rules WHERE id = :id"), {"id": rule_id}
+        )
+        .mappings()
+        .first()
+    )
     if rule_row is None:
         return [f"{'  ' * depth}[referenced rule/BB not found]"]
 
@@ -462,7 +495,9 @@ def _format_chain_recursive(
             next_rule_id = resolve_identifier_to_rule_id(db, customer_id, bb_id)
             if next_rule_id is not None:
                 lines.extend(
-                    _format_chain_recursive(db, customer_id, next_rule_id, visited, depth + 1, max_depth)
+                    _format_chain_recursive(
+                        db, customer_id, next_rule_id, visited, depth + 1, max_depth
+                    )
                 )
 
     response = fetch_rule_response(db, rule_id)
@@ -480,9 +515,11 @@ def format_full_chain_inline(db: Session, customer_id: int, rule_id: int) -> str
     flat root-chain-plus-appendix. Includes each rule/BB's own
     RESPONSE/ACTIONS and ENABLED/DISABLED status. Returns None if the
     rule doesn't exist."""
-    rule_row = db.execute(
-        text("SELECT name FROM rules WHERE id = :id"), {"id": rule_id}
-    ).mappings().first()
+    rule_row = (
+        db.execute(text("SELECT name FROM rules WHERE id = :id"), {"id": rule_id})
+        .mappings()
+        .first()
+    )
     if rule_row is None:
         return None
 

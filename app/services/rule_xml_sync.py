@@ -14,6 +14,7 @@ sync_rule_building_blocks as the actual entrypoint to call — that
 function's logic is reused here unchanged, just no longer paired with
 its own flag reset.
 """
+
 from __future__ import annotations
 
 import json
@@ -52,7 +53,10 @@ def sync_rule_xml_data(db: Session, customer_id: int) -> dict:
 
         # -- BB references --
         bb_refs = extract_bb_references(rule_xml)
-        db.execute(text("DELETE FROM rule_building_blocks WHERE rule_id = :rule_id"), {"rule_id": rule["id"]})
+        db.execute(
+            text("DELETE FROM rule_building_blocks WHERE rule_id = :rule_id"),
+            {"rule_id": rule["id"]},
+        )
         for ref in bb_refs:
             db.execute(
                 text(
@@ -61,13 +65,19 @@ def sync_rule_xml_data(db: Session, customer_id: int) -> dict:
                     VALUES (:rule_id, :bb_id, :raw_xml_snippet)
                     """
                 ),
-                {"rule_id": rule["id"], "bb_id": ref["bb_identifier"], "raw_xml_snippet": ref["raw_xml_snippet"]},
+                {
+                    "rule_id": rule["id"],
+                    "bb_id": ref["bb_identifier"],
+                    "raw_xml_snippet": ref["raw_xml_snippet"],
+                },
             )
             bb_refs_inserted += 1
 
         # -- Conditions --
         conditions = parse_rule_conditions(rule_xml)
-        db.execute(text("DELETE FROM rule_conditions WHERE rule_id = :rule_id"), {"rule_id": rule["id"]})
+        db.execute(
+            text("DELETE FROM rule_conditions WHERE rule_id = :rule_id"), {"rule_id": rule["id"]}
+        )
         for i, cond in enumerate(conditions):
             db.execute(
                 text(
@@ -91,7 +101,9 @@ def sync_rule_xml_data(db: Session, customer_id: int) -> dict:
         # reference writes, limiter) -- a DIFFERENT part of the XML
         # tree (<responses>/<limiter>, siblings of <testDefinitions>),
         # not a "condition" -- what the rule DOES, not what it checks.
-        db.execute(text("DELETE FROM rule_responses WHERE rule_id = :rule_id"), {"rule_id": rule["id"]})
+        db.execute(
+            text("DELETE FROM rule_responses WHERE rule_id = :rule_id"), {"rule_id": rule["id"]}
+        )
         response_data = extract_rule_response(rule_xml)
         if response_data:
             newevent = response_data.get("newevent", {})

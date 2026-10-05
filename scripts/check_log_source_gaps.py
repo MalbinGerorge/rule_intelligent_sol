@@ -7,6 +7,7 @@ data before wiring it into an API.
 Usage:
     uv run python scripts/check_log_source_gaps.py --name cotecna
 """
+
 import sys
 from pathlib import Path
 

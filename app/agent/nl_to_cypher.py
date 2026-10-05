@@ -3,6 +3,7 @@ Prompt construction + response parsing for the NL-to-Cypher agent.
 Pure, reusable logic — the actual LLM call and orchestration now live
 in app/agent/agent_nodes.py (LangGraph), which imports from here.
 """
+
 from __future__ import annotations
 
 import re
@@ -56,6 +57,8 @@ INSTRUCTIONS:
 - If the question genuinely cannot be answered from this graph (see Layer 2's "never stored here" notes — e.g. reference set/map CONTENTS), respond with exactly one line: NOT_ANSWERABLE: <brief reason>. Do not attempt a query that will just return nothing.
 - If the question is too AMBIGUOUS to translate into one specific query (e.g. it uses a vague term like "risky" or "important" that has no defined meaning in this schema, or could reasonably mean two different things), respond with exactly one line: CLARIFY: <a specific question to ask the user>. Do not guess at an interpretation and generate a query anyway.
 - NEVER return a raw node or relationship variable directly (e.g. "RETURN rel" or "RETURN r"). Always return specific properties (e.g. "RETURN r.name") or use properties(rel)/properties(r) to get a plain map — raw graph objects cannot be serialized in the response."""
+
+
 def strip_code_fences(text: str) -> str:
     """LLMs often wrap Cypher in ```cypher ... ``` despite instructions
     not to. Strip that off if present; otherwise return unchanged."""
@@ -76,9 +79,9 @@ def parse_llm_response(raw: str) -> dict:
     cleaned = strip_code_fences(raw)
 
     if cleaned.startswith("NOT_ANSWERABLE:"):
-        return {"kind": "not_answerable", "reason": cleaned[len("NOT_ANSWERABLE:"):].strip()}
+        return {"kind": "not_answerable", "reason": cleaned[len("NOT_ANSWERABLE:") :].strip()}
 
     if cleaned.startswith("CLARIFY:"):
-        return {"kind": "clarify", "question": cleaned[len("CLARIFY:"):].strip()}
+        return {"kind": "clarify", "question": cleaned[len("CLARIFY:") :].strip()}
 
     return {"kind": "query", "query": cleaned}

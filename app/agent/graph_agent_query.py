@@ -34,7 +34,7 @@ def _serialize_value(value):
 
     if hasattr(value, "to_native"):
         return value.to_native()  # e.g. neo4j.time.DateTime
-    
+
     return value
 
 

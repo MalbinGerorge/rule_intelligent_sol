@@ -32,18 +32,22 @@ from app.services.qradar_client import QRadarClient
 
 def load_customer(name: str) -> dict:
     with engine.connect() as conn:
-        row = conn.execute(
-            text(
-                """
+        row = (
+            conn.execute(
+                text(
+                    """
                 SELECT c.id, c.qradar_host, c.verify_ssl,
                        pgp_sym_decrypt(cc.token_encrypted, :key) AS token
                 FROM customers c
                 JOIN customer_credentials cc ON cc.customer_id = c.id
                 WHERE c.name = :name
                 """
-            ),
-            {"name": name, "key": settings.token_encryption_key.get_secret_value()},
-        ).mappings().first()
+                ),
+                {"name": name, "key": settings.token_encryption_key.get_secret_value()},
+            )
+            .mappings()
+            .first()
+        )
     if row is None:
         raise SystemExit(
             f"No customer named '{name}' found (or no credentials saved). "
@@ -78,12 +82,11 @@ def main() -> None:
         token=customer["token"],
         verify_ssl=customer["verify_ssl"],
     )
-    print("*"*100)
+    print("*" * 100)
     print(f"Pulling data for '{args.name}' ({customer['qradar_host']})...\n")
     print(f"token: {customer['token']}")
     print(f"verify_ssl: {customer['verify_ssl']}")
-    print("*"*100)
-
+    print("*" * 100)
 
     timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     out_dir = Path("logs/raw_pulls") / args.name / timestamp
@@ -125,21 +128,32 @@ def main() -> None:
                 identifiers.append(identifier)
 
     if not identifiers:
-        print("[SKIP] mitre_mapping: no rule identifiers found in rules_with_data — nothing to look up.")
+        print(
+            "[SKIP] mitre_mapping: no rule identifiers found in rules_with_data — nothing to look up."
+        )
     else:
         print(f"\nFetching MITRE coverage for {len(identifiers)} rule identifiers...")
         results = []
         failures = 0
         for identifier in identifiers:
             try:
-                print(f"This is the identifier being passed from rules_with_data to the MITRE mapping endpoint: {identifier}")
-                print("*"*50)
-                results.append({"identifier": identifier, "mitre_coverage": client.fetch_mitre_mapping(identifier)})
+                print(
+                    f"This is the identifier being passed from rules_with_data to the MITRE mapping endpoint: {identifier}"
+                )
+                print("*" * 50)
+                results.append(
+                    {
+                        "identifier": identifier,
+                        "mitre_coverage": client.fetch_mitre_mapping(identifier),
+                    }
+                )
             except Exception as exc:  # noqa: BLE001
                 failures += 1
                 results.append({"identifier": identifier, "error": str(exc)})
         path = save(out_dir, "mitre_mapping", 0, json.dumps(results, indent=2), "json")
-        print(f"[OK]   mitre_mapping: {len(identifiers) - failures} succeeded, {failures} failed -> {path}")
+        print(
+            f"[OK]   mitre_mapping: {len(identifiers) - failures} succeeded, {failures} failed -> {path}"
+        )
 
     print(f"\nDone. Inspect the files in {out_dir} to confirm real field names,")
     print("then we update the ORM models / parsers to match.")

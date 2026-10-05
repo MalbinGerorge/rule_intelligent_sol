@@ -4,12 +4,13 @@ Revision ID: a1b2c3d4e5f6
 Revises: 192964212f92
 Create Date: 2026-08-06 10:30:00.000000
 """
+
 from collections.abc import Sequence
 
 from alembic import op
 
-revision: str = 'a1b2c3d4e5f6'
-down_revision: str | None = '192964212f92'
+revision: str = "a1b2c3d4e5f6"
+down_revision: str | None = "192964212f92"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

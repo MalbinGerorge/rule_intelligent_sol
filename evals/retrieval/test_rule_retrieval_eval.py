@@ -29,6 +29,7 @@ Two genuinely different kinds of cases here, on purpose:
 
 Run: uv run pytest evals/retrieval/test_rule_retrieval_eval.py -v -s
 """
+
 from __future__ import annotations
 
 import sys
@@ -119,7 +120,9 @@ def _hit(result_titles: list[str], expected_substrings: list[str]) -> bool:
     return any(sub.lower() in joined for sub in expected_substrings)
 
 
-def _run_and_log(search_service, customer_id: int, case: dict, event_name: str) -> tuple[list[str], float | None, float]:
+def _run_and_log(
+    search_service, customer_id: int, case: dict, event_name: str
+) -> tuple[list[str], float | None, float]:
     """Runs the real search, logs a full structured record of the
     outcome (question, result titles, top score, latency), and
     returns what the calling test needs to make its assertions."""
@@ -145,7 +148,9 @@ def _run_and_log(search_service, customer_id: int, case: dict, event_name: str) 
 
 @pytest.mark.parametrize("case", EVAL_CASES, ids=[c["id"] for c in EVAL_CASES])
 def test_retrieval_hit_at_5(search_service, customer_id, case):
-    result_titles, top_score, _ = _run_and_log(search_service, customer_id, case, "eval_hit_case_completed")
+    result_titles, top_score, _ = _run_and_log(
+        search_service, customer_id, case, "eval_hit_case_completed"
+    )
 
     assert _hit(result_titles, case["expected_title_substrings"]), (
         f"Expected one of {case['expected_title_substrings']} in top 5 results, got: {result_titles}"

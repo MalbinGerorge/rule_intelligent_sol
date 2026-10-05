@@ -33,5 +33,5 @@ __all__ = [
     "SigmaGenerationJob",
     "EmbeddingJob",
     "MitreTechniqueCatalog",
-    "RuleMitreUnified"
+    "RuleMitreUnified",
 ]

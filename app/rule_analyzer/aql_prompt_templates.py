@@ -16,6 +16,7 @@ No OR operator -- QRadar AQL may not reliably support it, and even
 where it does, an OR'd query gives an ambiguous result (can't tell
 which condition actually matched). Separate sequential queries instead.
 """
+
 from __future__ import annotations
 
 AQL_RULES = """Follow these rules when writing the AQL query:
@@ -55,7 +56,7 @@ AQL_TOOL_DESCRIPTION = (
     f"{AQL_RULES}\n\n"
     f"{AQL_FEW_SHOT_EXAMPLES}\n\n"
     "Pass log_source_type as the EXACT log source type name shown in the rule chain "
-    "(e.g. \"Microsoft Windows Security Event Log\"), so the correct time-range cap applies -- "
+    '(e.g. "Microsoft Windows Security Event Log"), so the correct time-range cap applies -- '
     "this determines resource safety, so get it right rather than guessing. This tool has a "
     "budget of only 2 live searches per investigation -- use it deliberately, on the single most "
     "decisive question, not to explore broadly."

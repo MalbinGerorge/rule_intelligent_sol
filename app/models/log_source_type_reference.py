@@ -21,7 +21,9 @@ class LogSourceTypeReference(Base):
     __table_args__ = (UniqueConstraint("customer_id", "qradar_type_id"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True)
+    customer_id: Mapped[int] = mapped_column(
+        ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     qradar_type_id: Mapped[int] = mapped_column(BigInteger, nullable=False)  # QRadar's numeric "id"
     name: Mapped[str | None] = mapped_column(Text, index=True)
     custom: Mapped[bool | None] = mapped_column(Boolean)

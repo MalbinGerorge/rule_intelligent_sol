@@ -24,14 +24,14 @@ def main() -> None:
 
     print("\n2. Writing a test node...")
     with driver.session() as session:
-        session.run(
-            "MERGE (t:ConnectionTest {id: 'startup-check'}) SET t.checked_at = datetime()"
-        )
+        session.run("MERGE (t:ConnectionTest {id: 'startup-check'}) SET t.checked_at = datetime()")
     print("   OK — write succeeded")
 
     print("\n3. Reading it back...")
     with driver.session() as session:
-        result = session.run("MATCH (t:ConnectionTest {id: 'startup-check'}) RETURN t.checked_at AS checked_at")
+        result = session.run(
+            "MATCH (t:ConnectionTest {id: 'startup-check'}) RETURN t.checked_at AS checked_at"
+        )
         record = result.single()
         print(f"   OK — read succeeded, checked_at = {record['checked_at']}")
 

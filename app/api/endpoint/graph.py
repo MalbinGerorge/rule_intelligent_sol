@@ -4,6 +4,7 @@ app/services/graph_query.py). Same pattern as app/api/endpoint/rules.py:
 endpoint owns HTTP concerns and dict-to-schema conversion, service
 layer owns the actual query logic.
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query

@@ -8,6 +8,7 @@ rule_building_blocks is purely a results/mapper table here — it plays
 no part in deciding what needs re-parsing (that's rules.needs_reparse,
 set during ingestion).
 """
+
 from __future__ import annotations
 
 import json
@@ -42,7 +43,10 @@ def sync_rule_building_blocks(db: Session, customer_id: int) -> dict:
 
         refs = extract_bb_references(rule_xml)
 
-        db.execute(text("DELETE FROM rule_building_blocks WHERE rule_id = :rule_id"), {"rule_id": rule["id"]})
+        db.execute(
+            text("DELETE FROM rule_building_blocks WHERE rule_id = :rule_id"),
+            {"rule_id": rule["id"]},
+        )
 
         for ref in refs:
             db.execute(
@@ -52,7 +56,11 @@ def sync_rule_building_blocks(db: Session, customer_id: int) -> dict:
                     VALUES (:rule_id, :bb_id, :raw_xml_snippet)
                     """
                 ),
-                {"rule_id": rule["id"], "bb_id": ref["bb_identifier"], "raw_xml_snippet": ref["raw_xml_snippet"]},
+                {
+                    "rule_id": rule["id"],
+                    "bb_id": ref["bb_identifier"],
+                    "raw_xml_snippet": ref["raw_xml_snippet"],
+                },
             )
             refs_inserted += 1
 

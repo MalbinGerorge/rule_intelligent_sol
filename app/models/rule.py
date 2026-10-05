@@ -34,16 +34,26 @@ class Rule(Base):
     """
 
     __tablename__ = "rules"
-    __table_args__ = (UniqueConstraint("customer_id", "qradar_rule_id", name="uq_rules_customer_ruleid"),)
+    __table_args__ = (
+        UniqueConstraint("customer_id", "qradar_rule_id", name="uq_rules_customer_ruleid"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True)
+    customer_id: Mapped[int] = mapped_column(
+        ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     qradar_rule_id: Mapped[int] = mapped_column(BigInteger, nullable=False)  # QRadar's numeric "id"
-    identifier: Mapped[str | None] = mapped_column(Text, index=True)  # e.g. SYSTEM-1443 — MITRE lookup key
+    identifier: Mapped[str | None] = mapped_column(
+        Text, index=True
+    )  # e.g. SYSTEM-1443 — MITRE lookup key
     name: Mapped[str | None] = mapped_column(Text)
-    type: Mapped[str | None] = mapped_column(Text)  # EVENT | FLOW | COMMON | USER | ANOMALY | BEHAVIORAL | THRESHOLD
+    type: Mapped[str | None] = mapped_column(
+        Text
+    )  # EVENT | FLOW | COMMON | USER | ANOMALY | BEHAVIORAL | THRESHOLD
     owner: Mapped[str | None] = mapped_column(Text)
-    origin: Mapped[str | None] = mapped_column(Text)  # e.g. "SYSTEM" for IBM-default content vs custom rules
+    origin: Mapped[str | None] = mapped_column(
+        Text
+    )  # e.g. "SYSTEM" for IBM-default content vs custom rules
 
     # 'RULE' | 'BUILDING_BLOCK' — derived from the is_building_block boolean during ingestion
     object_type: Mapped[str] = mapped_column(Text, nullable=False, server_default="RULE")
@@ -53,8 +63,12 @@ class Rule(Base):
 
     enabled: Mapped[bool | None] = mapped_column(Boolean)
     linked_rule_identifier: Mapped[str | None] = mapped_column(Text)
-    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))   # from creation_date
-    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))   # from modification_date
+    created_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )  # from creation_date
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )  # from modification_date
     raw_json: Mapped[dict | None] = mapped_column(JSONB)  # includes rule_xml, capacity fields, etc.
     synced_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

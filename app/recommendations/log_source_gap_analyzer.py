@@ -16,6 +16,7 @@ Sigma content (title, description, detection logic, tags) from
 rule_yaml_representations -- NEVER raw rule_conditions, reference set
 values, or anything read directly from a peer's `rules` table.
 """
+
 from __future__ import annotations
 
 import structlog
@@ -27,8 +28,6 @@ from app.api.schemas.recommendations import LogSourceGap, PeerRuleSuggestion
 from app.recommendations.log_source_lookup import get_onboarded_log_source_types
 
 logger = structlog.get_logger(__name__)
-
-
 
 
 class LogSourceGapAnalyzer:
@@ -132,10 +131,14 @@ class LogSourceGapAnalyzer:
         return by_customer
 
     def _resolve_customer_names(self, customer_ids: set[int]) -> dict[int, str]:
-        rows = self.db.execute(
-            text("SELECT id, name FROM customers WHERE id = ANY(:ids)"),
-            {"ids": list(customer_ids)},
-        ).mappings().all()
+        rows = (
+            self.db.execute(
+                text("SELECT id, name FROM customers WHERE id = ANY(:ids)"),
+                {"ids": list(customer_ids)},
+            )
+            .mappings()
+            .all()
+        )
         return {r["id"]: r["name"] for r in rows}
 
     def _get_required_log_source_types_for_rules(self, rule_ids: list[int]) -> dict[int, list[str]]:
@@ -168,16 +171,20 @@ class LogSourceGapAnalyzer:
         if not all_rule_ids:
             return []
 
-        rows = self.db.execute(
-            text(
-                """
+        rows = (
+            self.db.execute(
+                text(
+                    """
                 SELECT rule_id, title, description, level, detection, tags
                 FROM rule_yaml_representations
                 WHERE rule_id = ANY(:rule_ids) AND role IN ('standalone', 'base')
                 """
-            ),
-            {"rule_ids": all_rule_ids},
-        ).mappings().all()
+                ),
+                {"rule_ids": all_rule_ids},
+            )
+            .mappings()
+            .all()
+        )
 
         rule_id_to_customer_name = {
             rid: name for name, ids in peer_rule_ids_by_customer.items() for rid in ids

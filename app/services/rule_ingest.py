@@ -4,6 +4,7 @@ Postgres. All three use the same upsert pattern: ON CONFLICT on the
 (customer_id, qradar_rule_id) unique constraint, so re-running ingestion
 updates existing rows instead of creating duplicates.
 """
+
 from __future__ import annotations
 
 import json

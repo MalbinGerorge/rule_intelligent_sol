@@ -11,6 +11,7 @@ the background task finishes. Confirmed via test: the runner's
 try/except guarantees a terminal status is ALWAYS written, even on
 failure -- a row can never be left stuck at 'running' forever.
 """
+
 import sqlalchemy as sa
 
 from alembic import op
@@ -22,7 +23,10 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column("investigation_reports", sa.Column("status", sa.Text(), nullable=False, server_default="completed"))
+    op.add_column(
+        "investigation_reports",
+        sa.Column("status", sa.Text(), nullable=False, server_default="completed"),
+    )
     op.add_column("investigation_reports", sa.Column("error", sa.Text(), nullable=True))
     op.create_index("ix_investigation_reports_status", "investigation_reports", ["status"])
 

@@ -25,7 +25,9 @@ class BuildingBlockReference(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True)
+    customer_id: Mapped[int] = mapped_column(
+        ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     qradar_rule_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     identifier: Mapped[str | None] = mapped_column(Text, index=True)
     name: Mapped[str | None] = mapped_column(Text)

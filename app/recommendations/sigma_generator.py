@@ -3,6 +3,7 @@ ONE class, ONE public method: SigmaGenerator.generate_and_save().
 Internally decides simple vs. correlation and routes accordingly --
 callers never need to know or check which path a given rule takes.
 """
+
 from __future__ import annotations
 
 import json
@@ -25,9 +26,13 @@ from app.rule_analyzer.llm_provider import LLMProvider
 from app.rule_analyzer.rule_chain_context import format_full_chain_inline
 
 THRESHOLD_TEST_CLASSES = {
-    "ThresholdFunction_Test", "TriggerMatchCount", "MatchCount",
-    "SequenceFunction_Test", "DoubleSequenceFunction_Test",
-    "CauseAndEffect_Test", "TriggerTimeout",
+    "ThresholdFunction_Test",
+    "TriggerMatchCount",
+    "MatchCount",
+    "SequenceFunction_Test",
+    "DoubleSequenceFunction_Test",
+    "CauseAndEffect_Test",
+    "TriggerTimeout",
 }
 
 
@@ -48,16 +53,24 @@ class SigmaGenerator:
 
     def requires_correlation(self, db: Session, rule_id: int) -> bool:
         count = db.execute(
-            text("SELECT count(*) FROM rule_conditions WHERE rule_id = :rule_id AND test_class = ANY(:classes)"),
+            text(
+                "SELECT count(*) FROM rule_conditions WHERE rule_id = :rule_id AND test_class = ANY(:classes)"
+            ),
             {"rule_id": rule_id, "classes": list(THRESHOLD_TEST_CLASSES)},
         ).scalar_one()
         return count > 0
 
     def _rule_mitre(self, db: Session, rule_id: int) -> tuple[list[str], list[str], list[str]]:
-        row = db.execute(
-            text("SELECT tactics, techniques, sub_techniques FROM rule_summary WHERE id = :rule_id"),
-            {"rule_id": rule_id},
-        ).mappings().first()
+        row = (
+            db.execute(
+                text(
+                    "SELECT tactics, techniques, sub_techniques FROM rule_summary WHERE id = :rule_id"
+                ),
+                {"rule_id": rule_id},
+            )
+            .mappings()
+            .first()
+        )
         return (
             (row["tactics"] if row else []) or [],
             (row["techniques"] if row else []) or [],
@@ -81,15 +94,23 @@ class SigmaGenerator:
 
         if self.requires_correlation(db, rule_id):
             prompt = build_correlation_generation_prompt(tactics, techniques, sub_techniques)
-            structured_llm = self.llm_provider.get_reasoning_llm().with_structured_output(SigmaCorrelationGeneration)
+            structured_llm = self.llm_provider.get_reasoning_llm().with_structured_output(
+                SigmaCorrelationGeneration
+            )
             generation = structured_llm.invoke(
                 [SystemMessage(content=prompt), HumanMessage(content=f"RULE CHAIN:\n{chain_text}")]
             )
             base_id, correlation_id = self._save_correlation(db, customer_id, rule_id, generation)
-            return {"role": "correlation", "ids": [base_id, correlation_id], "generation": generation}
+            return {
+                "role": "correlation",
+                "ids": [base_id, correlation_id],
+                "generation": generation,
+            }
 
         prompt = build_sigma_generation_prompt(tactics, techniques, sub_techniques)
-        structured_llm = self.llm_provider.get_reasoning_llm().with_structured_output(SigmaRuleGeneration)
+        structured_llm = self.llm_provider.get_reasoning_llm().with_structured_output(
+            SigmaRuleGeneration
+        )
         generation = structured_llm.invoke(
             [SystemMessage(content=prompt), HumanMessage(content=f"RULE CHAIN:\n{chain_text}")]
         )
@@ -105,11 +126,15 @@ class SigmaGenerator:
         rows over time, since every save was a plain INSERT with
         nothing ever cleaning up the prior version."""
         db.execute(
-            text("DELETE FROM rule_yaml_representations WHERE rule_id = :rule_id AND customer_id = :customer_id"),
+            text(
+                "DELETE FROM rule_yaml_representations WHERE rule_id = :rule_id AND customer_id = :customer_id"
+            ),
             {"rule_id": rule_id, "customer_id": customer_id},
         )
 
-    def _save_standalone(self, db: Session, customer_id: int, rule_id: int, generation: SigmaRuleGeneration) -> int:
+    def _save_standalone(
+        self, db: Session, customer_id: int, rule_id: int, generation: SigmaRuleGeneration
+    ) -> int:
         self._delete_existing(db, customer_id, rule_id)
         sigma_id = str(uuid.uuid4())
         row = db.execute(

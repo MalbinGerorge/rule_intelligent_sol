@@ -12,6 +12,7 @@ app/models/, a real risk given target_metadata = Base.metadata and
 autogenerate now being available: Alembic could otherwise see these
 as unwanted tables and generate a DROP for them).
 """
+
 import sqlalchemy as sa
 
 from alembic import op

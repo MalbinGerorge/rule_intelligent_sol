@@ -7,6 +7,7 @@ tool allow-list, deliberately -- pure text-in, structured-json-out
 reasoning, no external calls at all. No rbac_enforced() wrapper is
 needed here for that reason; the empty role itself is the guarantee.
 """
+
 from __future__ import annotations
 
 import time

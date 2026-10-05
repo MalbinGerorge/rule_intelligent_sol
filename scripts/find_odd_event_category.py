@@ -9,11 +9,18 @@ from app.db.session import engine
 
 with engine.connect() as conn:
     customer_id = conn.execute(text("SELECT id FROM customers WHERE name='cotecna'")).scalar_one()
-    rows = conn.execute(text("""
+    rows = (
+        conn.execute(
+            text("""
         SELECT r.name, rc.raw_text, rc.structured_data
         FROM rule_conditions rc JOIN rules r ON r.id = rc.rule_id
         WHERE r.customer_id = :c AND rc.test_class = 'EventCategory_Test'
-    """), {"c": customer_id}).mappings().all()
+    """),
+            {"c": customer_id},
+        )
+        .mappings()
+        .all()
+    )
 
     for row in rows:
         cats = row["structured_data"].get("event_category", {}).get("categories", [])

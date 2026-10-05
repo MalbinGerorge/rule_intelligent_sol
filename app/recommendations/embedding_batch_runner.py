@@ -9,6 +9,7 @@ Deliberately MANUAL trigger for now (not auto-chained after Sigma
 generation) -- see project notes: prove this pipeline's stability
 first, wire the chaining together once confidence is established.
 """
+
 from __future__ import annotations
 
 import json
@@ -55,7 +56,9 @@ def run_embedding_batch(engine: Engine, job_id: int, representations: list[dict]
     failed = 0
     failed_details: list[dict] = []
 
-    logger.info("embedding_batch_started", job_id=job_id, total_representations=len(representations))
+    logger.info(
+        "embedding_batch_started", job_id=job_id, total_representations=len(representations)
+    )
 
     try:
         model = SentenceTransformer(EMBEDDING_MODEL_NAME)
@@ -86,7 +89,11 @@ def run_embedding_batch(engine: Engine, job_id: int, representations: list[dict]
             except Exception as exc:  # noqa: BLE001 -- one bad representation must not kill the whole batch
                 failed += 1
                 failed_details.append(
-                    {"rule_id": row["rule_id"], "customer_id": row["customer_id"], "error": str(exc)}
+                    {
+                        "rule_id": row["rule_id"],
+                        "customer_id": row["customer_id"],
+                        "error": str(exc),
+                    }
                 )
                 logger.warning(
                     "embedding_representation_failed",
@@ -117,7 +124,9 @@ def run_embedding_batch(engine: Engine, job_id: int, representations: list[dict]
 
         with engine.begin() as db:
             db.execute(
-                text("UPDATE embedding_jobs SET status = 'completed', finished_at = now() WHERE id = :id"),
+                text(
+                    "UPDATE embedding_jobs SET status = 'completed', finished_at = now() WHERE id = :id"
+                ),
                 {"id": job_id},
             )
         logger.info("embedding_batch_completed", job_id=job_id, processed=processed, failed=failed)

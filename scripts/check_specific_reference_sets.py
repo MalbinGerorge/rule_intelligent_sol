@@ -30,7 +30,7 @@ SEARCH_TERMS = [
     "[CyberProof] - [Cotecna] - Domain Admins (AMERICA)",
     "[CyberProof] - [Cotecna] - Domain Admins (ASIA)",
     "[CyberProof] - [Cotecna] - Domain Admins (COTECNA.LOC)",
-    "[CyberProof] - [Cotecna] - Domain Admins (EUROPE)"
+    "[CyberProof] - [Cotecna] - Domain Admins (EUROPE)",
 ]
 
 
@@ -51,11 +51,13 @@ print(f"Total reference sets on console: {len(all_sets)}\n")
 
 for term in SEARCH_TERMS:
     matches = [s for s in all_sets if term.lower() in s.get("name", "").lower()]
-    print(f"=== Search: \"{term}\" ===")
+    print(f'=== Search: "{term}" ===')
     if not matches:
         print("  NO MATCHING SET FOUND on the live console.")
     for s in matches:
         entries = s.get("number_of_entries", 0)
         flag = "  *** EMPTY ***" if entries == 0 else ""
-        print(f"  \"{s['name']}\" | entries={entries} | namespace={s.get('namespace')} | type={s.get('entry_type')}{flag}")
+        print(
+            f'  "{s["name"]}" | entries={entries} | namespace={s.get("namespace")} | type={s.get("entry_type")}{flag}'
+        )
     print()

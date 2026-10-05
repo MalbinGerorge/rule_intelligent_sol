@@ -31,12 +31,16 @@ class MitreMapping(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True)
-    rule_id: Mapped[int | None] = mapped_column(ForeignKey("rules.id", ondelete="CASCADE"), index=True)
+    customer_id: Mapped[int] = mapped_column(
+        ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    rule_id: Mapped[int | None] = mapped_column(
+        ForeignKey("rules.id", ondelete="CASCADE"), index=True
+    )
     tactic_id: Mapped[str] = mapped_column(Text, nullable=False, server_default="")  # e.g. TA0006
-    tactic: Mapped[str | None] = mapped_column(Text)                                 # e.g. Credential Access
-    technique_id: Mapped[str] = mapped_column(Text, nullable=False, server_default="")    # e.g. T1030
-    technique_name: Mapped[str | None] = mapped_column(Text)                              # e.g. Steal or Forge Kerberos Tickets
+    tactic: Mapped[str | None] = mapped_column(Text)  # e.g. Credential Access
+    technique_id: Mapped[str] = mapped_column(Text, nullable=False, server_default="")  # e.g. T1030
+    technique_name: Mapped[str | None] = mapped_column(Text)  # e.g. Steal or Forge Kerberos Tickets
     raw_json: Mapped[dict | None] = mapped_column(JSONB)
     synced_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

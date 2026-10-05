@@ -6,6 +6,7 @@ concern; converting a row into a response shape is the endpoint's job.
 This keeps the service layer reusable by anything (CLI scripts, a
 future worker, tests) without dragging in FastAPI's response contracts.
 """
+
 from __future__ import annotations
 
 from sqlalchemy import text
@@ -31,9 +32,11 @@ def list_rules(
 
 
 def get_rule_by_id(db: Session, rule_id: int) -> dict | None:
-    row = db.execute(
-        text("SELECT * FROM rule_summary WHERE id = :id"), {"id": rule_id}
-    ).mappings().first()
+    row = (
+        db.execute(text("SELECT * FROM rule_summary WHERE id = :id"), {"id": rule_id})
+        .mappings()
+        .first()
+    )
     return dict(row) if row else None
 
 
@@ -54,9 +57,10 @@ def list_canonical_rules(db: Session, customer_id: int) -> list[dict]:
     `rule_summary` correctly summarizes each row as-is. This is a
     THIRD, distinct need (one canonical id per logical rule), so it's
     resolved here, at query time, not by changing either source."""
-    rows = db.execute(
-        text(
-            """
+    rows = (
+        db.execute(
+            text(
+                """
             WITH pairs AS (
                 SELECT *, LEAST(identifier, linked_rule_identifier) AS pair_key
                 FROM rule_summary
@@ -66,9 +70,12 @@ def list_canonical_rules(db: Session, customer_id: int) -> list[dict]:
             FROM pairs
             ORDER BY pair_key, (origin = 'OVERRIDE') DESC
             """
-        ),
-        {"customer_id": customer_id},
-    ).mappings().all()
+            ),
+            {"customer_id": customer_id},
+        )
+        .mappings()
+        .all()
+    )
     return [dict(r) for r in rows]
 
 
@@ -95,9 +102,10 @@ def get_health_metrics(db: Session, customer_id: int) -> dict:
     not-triggered. Filtering raw rows independently per bucket risks
     double-counting a pair where only one half triggered.
     """
-    row = db.execute(
-        text(
-            """
+    row = (
+        db.execute(
+            text(
+                """
             WITH rule_pairs AS (
                 SELECT
                     LEAST(identifier, linked_rule_identifier) AS pair_key,
@@ -121,7 +129,10 @@ def get_health_metrics(db: Session, customer_id: int) -> dict:
                 (SELECT count(*) FROM rule_pairs WHERE any_enabled AND any_triggered) AS enabled_triggered,
                 (SELECT count(*) FROM rule_pairs WHERE any_enabled AND NOT any_triggered) AS enabled_not_triggered
             """
-        ),
-        {"customer_id": customer_id},
-    ).mappings().first()
+            ),
+            {"customer_id": customer_id},
+        )
+        .mappings()
+        .first()
+    )
     return dict(row)

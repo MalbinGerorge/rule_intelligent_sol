@@ -54,7 +54,11 @@ def push_credentials(name: str, host: str, token: str, verify_ssl: bool) -> int:
                         rotated_at = now()
                 """
             ),
-            {"customer_id": customer_id, "token": token, "key": settings.token_encryption_key.get_secret_value()},
+            {
+                "customer_id": customer_id,
+                "token": token,
+                "key": settings.token_encryption_key.get_secret_value(),
+            },
         )
 
     return customer_id
@@ -66,7 +70,10 @@ def main() -> None:
     parser.add_argument("--host", required=True, help="QRadar console host/IP")
     parser.add_argument("--token", required=True, help="QRadar SEC token")
     parser.add_argument(
-        "--verify-ssl", dest="verify_ssl", action="store_true", default=False,
+        "--verify-ssl",
+        dest="verify_ssl",
+        action="store_true",
+        default=False,
         help="verify the console's TLS cert (off by default — most consoles use self-signed certs)",
     )
     args = parser.parse_args()

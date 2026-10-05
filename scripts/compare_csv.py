@@ -10,21 +10,23 @@ from app.db.session import engine
 csv_path = sys.argv[1]
 
 csv_rules = {}
-with open(csv_path, newline='', encoding='utf-8-sig') as f:
+with open(csv_path, newline="", encoding="utf-8-sig") as f:
     reader = csv.DictReader(f)
     for row in reader:
-        rule_id = int(row['Rule ID'])
-        enabled = row['Rule enabled'].strip().lower() == 'true'
-        triggered = bool(row['Rule last triggered'].strip())
-        csv_rules[rule_id] = (enabled, triggered, row['Rule name'])
+        rule_id = int(row["Rule ID"])
+        enabled = row["Rule enabled"].strip().lower() == "true"
+        triggered = bool(row["Rule last triggered"].strip())
+        csv_rules[rule_id] = (enabled, triggered, row["Rule name"])
 
 with engine.connect() as conn:
-    db_rows = conn.execute(text("""
+    db_rows = conn.execute(
+        text("""
         SELECT qradar_rule_id, enabled, last_event_at IS NOT NULL AS triggered, name
         FROM rule_summary
         WHERE customer_id = (SELECT id FROM customers WHERE name='cotecna')
           AND object_type = 'RULE'
-    """)).fetchall()
+    """)
+    ).fetchall()
 
 db_rules = {r[0]: (r[1], r[2], r[3]) for r in db_rows}
 

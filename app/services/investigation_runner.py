@@ -11,6 +11,7 @@ plain, framework-agnostic functions (CONFIRMED via test: the critical
 TASK (run_investigation_task, at the bottom) is a thin wrapper around
 these -- no new logic there, just the queueing mechanism.
 """
+
 from __future__ import annotations
 
 from sqlalchemy import text
@@ -39,7 +40,9 @@ def create_pending_investigation(engine: Engine, customer_id: int, rule_id: int)
         return row.scalar_one()
 
 
-def run_and_store_investigation(engine: Engine, investigation_id: int, customer_id: int, rule_id: int) -> None:
+def run_and_store_investigation(
+    engine: Engine, investigation_id: int, customer_id: int, rule_id: int
+) -> None:
     """The actual background work. Called via a Celery task (see
     run_investigation_task below) -- takes the ENGINE (not a
     request-scoped db session), since this runs in a completely
@@ -76,7 +79,9 @@ def run_and_store_investigation(engine: Engine, investigation_id: int, customer_
                 {
                     "id": investigation_id,
                     "chain_analysis": chain_analysis.model_dump_json() if chain_analysis else None,
-                    "final_report": final_report_structured.model_dump_json() if final_report_structured else None,
+                    "final_report": final_report_structured.model_dump_json()
+                    if final_report_structured
+                    else None,
                     "rendered_report": result.get("final_report"),
                     "trace": result.get("trace"),
                     "tool_calls_made": result.get("tool_calls_made"),
@@ -85,7 +90,9 @@ def run_and_store_investigation(engine: Engine, investigation_id: int, customer_
     except Exception as exc:  # noqa: BLE001 -- deliberately broad: ANY failure must still mark the row terminal
         with engine.begin() as db:
             db.execute(
-                text("UPDATE investigation_reports SET status = 'failed', error = :error WHERE id = :id"),
+                text(
+                    "UPDATE investigation_reports SET status = 'failed', error = :error WHERE id = :id"
+                ),
                 {"id": investigation_id, "error": str(exc)},
             )
 

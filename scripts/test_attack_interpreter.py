@@ -8,6 +8,7 @@ loop, not the fast/cheap one.
 Usage:
     uv run python scripts/test_attack_interpreter.py
 """
+
 import sys
 from pathlib import Path
 

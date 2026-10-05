@@ -10,6 +10,7 @@ mismatched lengths (real data: rule 393 had tactics enabled with zero
 techniques under them), which would silently fabricate wrong pairings
 if combined positionally.
 """
+
 from __future__ import annotations
 
 from sqlalchemy import text

@@ -23,7 +23,9 @@ from app.db.session import engine
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--name", required=True, help="customer name, e.g. cotecna")
-    parser.add_argument("--test-class", required=True, help="short class name, e.g. ArielFilterTest")
+    parser.add_argument(
+        "--test-class", required=True, help="short class name, e.g. ArielFilterTest"
+    )
     parser.add_argument("--limit", type=int, default=3)
     args = parser.parse_args()
 

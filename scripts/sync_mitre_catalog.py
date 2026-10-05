@@ -11,6 +11,7 @@ this task, rather than hand-parsing raw STIX ourselves.
 Usage:
     uv run python scripts/sync_mitre_catalog.py
 """
+
 import sys
 from pathlib import Path
 
@@ -105,7 +106,9 @@ def main() -> None:
         if not technique_id:
             continue
         is_subtechnique = bool(t.get("x_mitre_is_subtechnique", False))
-        parent_technique_id = technique_id.split(".")[0] if is_subtechnique and "." in technique_id else None
+        parent_technique_id = (
+            technique_id.split(".")[0] if is_subtechnique and "." in technique_id else None
+        )
         rows.append(
             {
                 "technique_id": technique_id,

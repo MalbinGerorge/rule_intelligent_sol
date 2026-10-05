@@ -4,6 +4,7 @@ file, separate from prompts and invocation logic, since several
 schemas here will be shared/referenced across multiple pipeline steps
 as later agents (Field Substitution, Verifier) are built.
 """
+
 from __future__ import annotations
 
 from pydantic import BaseModel, Field
@@ -11,12 +12,17 @@ from pydantic import BaseModel, Field
 
 class AttackStep(BaseModel):
     step_number: int
-    technique_id: str | None = Field(None, description="MITRE ATT&CK ID, if identifiable, e.g. 'T1003'")
+    technique_id: str | None = Field(
+        None, description="MITRE ATT&CK ID, if identifiable, e.g. 'T1003'"
+    )
     technique_name: str = Field(description="Short name, e.g. 'Credential dumping via Mimikatz'")
     target_log_source: str | None = Field(
-        None, description="Explicitly stated log source, e.g. 'Windows Security Event Log', 'Sysmon'"
+        None,
+        description="Explicitly stated log source, e.g. 'Windows Security Event Log', 'Sysmon'",
     )
-    target_server: str | None = Field(None, description="Explicitly stated target server, e.g. 'DC01'")
+    target_server: str | None = Field(
+        None, description="Explicitly stated target server, e.g. 'DC01'"
+    )
 
     # Filled in by MitreTechniqueValidator, AFTER the interpreter --
     # NOT trusted from the LLM's own guess. None until validated.
@@ -65,7 +71,9 @@ class ReferenceLogSample(BaseModel):
 class ExtractedProperty(BaseModel):
     name: str
     value: str
-    method: str = Field(description="'nvp_generic' (built-in key=value pass) or 'regex' (a synced QRadar expression)")
+    method: str = Field(
+        description="'nvp_generic' (built-in key=value pass) or 'regex' (a synced QRadar expression)"
+    )
 
 
 class ExtractedProperties(BaseModel):
@@ -88,7 +96,7 @@ class ExtractedProperties(BaseModel):
     def as_dict(self) -> dict[str, str]:
         return {p.name: p.value for p in self.properties}
 
-    
+
 class StepResult(BaseModel):
     """One attack step, carried through MITRE validation, (if ready)
     reference log retrieval, and DSM property extraction -- the full

@@ -10,6 +10,7 @@ Two-tier match, exact first:
 No match at all is an HONEST outcome -- mitre_confirmed=False -- not
 an error, and not silently filled with a guess.
 """
+
 from __future__ import annotations
 
 import structlog
@@ -45,18 +46,25 @@ class MitreTechniqueValidator:
         return step
 
     def _lookup_by_id(self, technique_id: str) -> dict | None:
-        row = self.db.execute(
-            text("SELECT technique_id, technique_name FROM mitre_technique_catalog WHERE technique_id = :id"),
-            {"id": technique_id},
-        ).mappings().first()
+        row = (
+            self.db.execute(
+                text(
+                    "SELECT technique_id, technique_name FROM mitre_technique_catalog WHERE technique_id = :id"
+                ),
+                {"id": technique_id},
+            )
+            .mappings()
+            .first()
+        )
         return dict(row) if row else None
 
     def _lookup_by_name(self, technique_name: str) -> dict | None:
         """Fuzzy fallback -- Postgres trigram similarity via pg_trgm.
         Requires: CREATE EXTENSION IF NOT EXISTS pg_trgm;"""
-        row = self.db.execute(
-            text(
-                """
+        row = (
+            self.db.execute(
+                text(
+                    """
                 SELECT technique_id, technique_name,
                        similarity(technique_name, :name) AS sim
                 FROM mitre_technique_catalog
@@ -64,9 +72,12 @@ class MitreTechniqueValidator:
                 ORDER BY sim DESC
                 LIMIT 1
                 """
-            ),
-            {"name": technique_name},
-        ).mappings().first()
+                ),
+                {"name": technique_name},
+            )
+            .mappings()
+            .first()
+        )
         return dict(row) if row else None
 
     def _apply_match(self, step: AttackStep, match: dict, confirmed: bool) -> AttackStep:

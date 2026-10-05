@@ -4,6 +4,7 @@ numeric codes to real names (e.g. 12 -> "Microsoft Windows Security
 Event Log"). Same upsert pattern as rules_reference/mitre_mappings:
 pull once, cache in Postgres, join against it going forward.
 """
+
 from __future__ import annotations
 
 import json

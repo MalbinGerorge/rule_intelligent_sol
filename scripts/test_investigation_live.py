@@ -13,7 +13,7 @@ from app.services.qradar_client_factory import build_qradar_client_for_customer
 
 CUSTOMER_NAME = "cotecna"
 # RULE_ID = 496  # replace with a real internal rule_id from your fresh data
-RULE_ID = 359 #%Office 365%Malware Mail Detected%
+RULE_ID = 359  # %Office 365%Malware Mail Detected%
 
 
 with engine.connect() as db:

@@ -3,6 +3,7 @@ Neo4j connection layer. Mirrors app/db/session.py's pattern for
 Postgres — one driver instance, created from settings, reused
 everywhere rather than each caller opening its own connection.
 """
+
 from __future__ import annotations
 
 from neo4j import Driver, GraphDatabase

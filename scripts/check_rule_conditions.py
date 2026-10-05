@@ -9,10 +9,12 @@ from app.db.session import engine
 
 with engine.connect() as conn:
     print("--- columns ---")
-    cols = conn.execute(text("""
+    cols = conn.execute(
+        text("""
         SELECT column_name, data_type FROM information_schema.columns
         WHERE table_name = 'rule_conditions' ORDER BY ordinal_position
-    """)).fetchall()
+    """)
+    ).fetchall()
     for c in cols:
         print(c)
 

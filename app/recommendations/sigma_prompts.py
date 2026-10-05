@@ -5,6 +5,7 @@ values, logsource) are defined ONCE at the top and reused by both
 prompt builders below -- a fix to shared guidance only needs to
 happen in one place.
 """
+
 from __future__ import annotations
 
 # -- Shared instructions, used by BOTH prompts below ------------------
@@ -63,13 +64,18 @@ _MITRE_INFERRED = (
 
 def _mitre_instruction(tactics: list[str], techniques: list[str], sub_techniques: list[str]) -> str:
     if tactics or techniques or sub_techniques:
-        return _MITRE_CONFIRMED.format(tactics=tactics, techniques=techniques, sub_techniques=sub_techniques)
+        return _MITRE_CONFIRMED.format(
+            tactics=tactics, techniques=techniques, sub_techniques=sub_techniques
+        )
     return _MITRE_INFERRED
 
 
 # -- Prompt 1: SIMPLE rule generation ---------------------------------
 
-def build_sigma_generation_prompt(tactics: list[str], techniques: list[str], sub_techniques: list[str]) -> str:
+
+def build_sigma_generation_prompt(
+    tactics: list[str], techniques: list[str], sub_techniques: list[str]
+) -> str:
     mitre = _mitre_instruction(tactics, techniques, sub_techniques)
     return f"""You are converting a QRadar detection rule (including any referenced building blocks, already inlined below) into a Sigma-format representation, following the REAL Sigma rule specification.
 
@@ -93,7 +99,10 @@ REAL SIGMA CONVENTIONS (from actual SigmaHQ community rules):
 
 # -- Prompt 2: CORRELATION rule generation (base + correlation) ------
 
-def build_correlation_generation_prompt(tactics: list[str], techniques: list[str], sub_techniques: list[str]) -> str:
+
+def build_correlation_generation_prompt(
+    tactics: list[str], techniques: list[str], sub_techniques: list[str]
+) -> str:
     mitre = _mitre_instruction(tactics, techniques, sub_techniques)
     return f"""You are converting a QRadar detection rule that involves COUNTING or THRESHOLDING occurrences of an event pattern over time (e.g. "at least N events matching X within Y minutes") into Sigma's CORRELATION format.
 

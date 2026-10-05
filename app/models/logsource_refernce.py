@@ -36,10 +36,14 @@ class LogSourceReference(Base):
     __table_args__ = (UniqueConstraint("customer_id", "qradar_log_source_id"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True)
+    customer_id: Mapped[int] = mapped_column(
+        ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     qradar_log_source_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     name: Mapped[str | None] = mapped_column(Text)
-    type_id: Mapped[int | None] = mapped_column(BigInteger, index=True)  # links to log_source_types_reference.qradar_type_id
+    type_id: Mapped[int | None] = mapped_column(
+        BigInteger, index=True
+    )  # links to log_source_types_reference.qradar_type_id
     enabled: Mapped[bool | None] = mapped_column(Boolean)
     status: Mapped[str | None] = mapped_column(Text)  # from status.status
     last_event_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

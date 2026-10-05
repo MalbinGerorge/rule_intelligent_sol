@@ -9,6 +9,7 @@ from app.dependencies.db import get_db
 
 router = APIRouter(prefix="/customers", tags=["customers"])
 
+
 @router.get("", response_model=CustomerListResponse)
 def list_customers(db: Session = Depends(get_db)):
     rows = db.execute(text("SELECT id, name FROM customers ORDER BY name")).mappings().all()

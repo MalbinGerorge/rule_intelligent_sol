@@ -7,5 +7,6 @@ class CustomerSummary(BaseModel):
     id: int
     name: str
 
+
 class CustomerListResponse(BaseModel):
     customers: list[CustomerSummary]

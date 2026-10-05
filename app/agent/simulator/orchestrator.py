@@ -9,6 +9,7 @@ after the analyst has supplied enough detail -- re-running the full
 pipeline on every clarification round would waste real MITRE catalog
 + QRadar queries on steps that were already fine.
 """
+
 from __future__ import annotations
 
 import time
@@ -51,7 +52,9 @@ class SimulatorOrchestrator:
         duration_ms = round((time.perf_counter() - started_at) * 1000, 1)
         ready_count = sum(1 for sr in step_results if sr.step.has_enough_detail)
         found_count = sum(
-            1 for sr in step_results if sr.reference_sample and sr.reference_sample.source == "qradar"
+            1
+            for sr in step_results
+            if sr.reference_sample and sr.reference_sample.source == "qradar"
         )
         logger.info(
             "pipeline_run_completed",

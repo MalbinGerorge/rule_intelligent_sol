@@ -4,6 +4,7 @@ Revision ID: 202609101500
 Revises: 202609101455
 Create Date: 2026-09-09
 """
+
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
@@ -25,7 +26,9 @@ def upgrade() -> None:
         sa.Column("failed_representations", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("failed_details", postgresql.JSONB(), nullable=True),
         sa.Column("error", sa.Text(), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
         sa.Column("finished_at", sa.DateTime(timezone=True), nullable=True),
     )
     op.create_index("ix_embedding_jobs_status", "embedding_jobs", ["status"])

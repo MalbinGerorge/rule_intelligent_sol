@@ -31,6 +31,7 @@ LOCALLY (no rule content ever transmitted externally for embedding),
 an extra layer of protection on top of the de-identification the LLM
 performs when generating the Sigma representation itself.
 """
+
 import sqlalchemy as sa
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects import postgresql
@@ -49,9 +50,15 @@ def upgrade() -> None:
     op.create_table(
         "rule_yaml_representations",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("rule_id", sa.Integer(), sa.ForeignKey("rules.id", ondelete="CASCADE"), nullable=False),
-        sa.Column("customer_id", sa.Integer(), sa.ForeignKey("customers.id", ondelete="CASCADE"), nullable=False),
-
+        sa.Column(
+            "rule_id", sa.Integer(), sa.ForeignKey("rules.id", ondelete="CASCADE"), nullable=False
+        ),
+        sa.Column(
+            "customer_id",
+            sa.Integer(),
+            sa.ForeignKey("customers.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         # -- Real Sigma spec fields (confirmed against SigmaHQ) --
         sa.Column("sigma_id", sa.Text(), nullable=False),  # UUID v4, generated at creation
         sa.Column("title", sa.Text(), nullable=False),
@@ -59,28 +66,39 @@ def upgrade() -> None:
         sa.Column("status", sa.Text(), nullable=False, server_default="experimental"),
         sa.Column("level", sa.Text(), nullable=True),  # informational|low|medium|high|critical
         sa.Column("logsource", postgresql.JSONB(), nullable=True),  # {category, product, service}
-        sa.Column("detection", postgresql.JSONB(), nullable=False),  # {selections: {...}, condition: "..."}
-        sa.Column("tags", postgresql.JSONB(), nullable=True),  # ["attack.t1110", "attack.credential_access", ...]
+        sa.Column(
+            "detection", postgresql.JSONB(), nullable=False
+        ),  # {selections: {...}, condition: "..."}
+        sa.Column(
+            "tags", postgresql.JSONB(), nullable=True
+        ),  # ["attack.t1110", "attack.credential_access", ...]
         sa.Column("falsepositives", postgresql.JSONB(), nullable=True),
         sa.Column("references", postgresql.JSONB(), nullable=True),
-
         # -- Our own additions, kept explicitly separate from Sigma's own fields --
         sa.Column("mitre_techniques_inferred", postgresql.JSONB(), nullable=True),
         # each entry: {"technique_id": "T1110", "technique_name": "...", "confidence": "high|medium|low"}
         # NEVER merged into the existing mitre_mappings table -- see module docstring.
-
-        sa.Column("embedding", Vector(384), nullable=True),  # populated in a separate pass, after generation
-
-        sa.Column("generated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "embedding", Vector(384), nullable=True
+        ),  # populated in a separate pass, after generation
+        sa.Column(
+            "generated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
     )
 
-    op.create_index("ix_rule_yaml_representations_rule_id", "rule_yaml_representations", ["rule_id"])
-    op.create_index("ix_rule_yaml_representations_customer_id", "rule_yaml_representations", ["customer_id"])
+    op.create_index(
+        "ix_rule_yaml_representations_rule_id", "rule_yaml_representations", ["rule_id"]
+    )
+    op.create_index(
+        "ix_rule_yaml_representations_customer_id", "rule_yaml_representations", ["customer_id"]
+    )
     # ivfflat index deliberately NOT created yet -- needs a meaningful
     # amount of real data to be effective; add once volume justifies it.
 
 
 def downgrade() -> None:
-    op.drop_index("ix_rule_yaml_representations_customer_id", table_name="rule_yaml_representations")
+    op.drop_index(
+        "ix_rule_yaml_representations_customer_id", table_name="rule_yaml_representations"
+    )
     op.drop_index("ix_rule_yaml_representations_rule_id", table_name="rule_yaml_representations")
     op.drop_table("rule_yaml_representations")

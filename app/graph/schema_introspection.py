@@ -8,6 +8,7 @@ as everything else in this project. See docs/graph_schema_reference.md
 for Layer 2 (hand-written semantics) that lives alongside this file's
 output.
 """
+
 from __future__ import annotations
 
 from neo4j import Driver

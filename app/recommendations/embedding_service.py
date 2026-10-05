@@ -21,6 +21,7 @@ _build_suggestions(). Deliberately coupled to Sigma's own quality --
 see project notes: the alternative (embedding raw, non-de-identified
 data) would be a real confidentiality regression, not an improvement.
 """
+
 from __future__ import annotations
 
 import structlog
@@ -39,9 +40,10 @@ def get_stale_representations(db: Session) -> list[dict]:
     Spans ALL customers deliberately -- this is a shared, cross-
     customer search index, not a per-customer job like Sigma
     generation itself."""
-    rows = db.execute(
-        text(
-            """
+    rows = (
+        db.execute(
+            text(
+                """
             SELECT ryr.rule_id, ryr.customer_id, c.name AS customer_name,
                    ryr.title, ryr.description, ryr.detection, ryr.level, ryr.tags
             FROM rule_yaml_representations ryr
@@ -49,8 +51,11 @@ def get_stale_representations(db: Session) -> list[dict]:
             WHERE ryr.role IN ('standalone', 'base')
               AND (ryr.embedded_at IS NULL OR ryr.embedded_at < ryr.generated_at)
             """
+            )
         )
-    ).mappings().all()
+        .mappings()
+        .all()
+    )
     logger.info("stale_representations_found", count=len(rows))
     return [dict(r) for r in rows]
 

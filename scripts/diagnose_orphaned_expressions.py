@@ -13,7 +13,9 @@ from app.services.qradar_client_factory import build_qradar_client_for_customer
 CUSTOMER_NAME = "cotecna"
 
 with engine.connect() as db:
-    customer_id = db.execute(text("SELECT id FROM customers WHERE name = :n"), {"n": CUSTOMER_NAME}).scalar_one()
+    customer_id = db.execute(
+        text("SELECT id FROM customers WHERE name = :n"), {"n": CUSTOMER_NAME}
+    ).scalar_one()
     client = build_qradar_client_for_customer(db, customer_id)
 
     property_pages = client.fetch_regex_properties()
@@ -30,9 +32,18 @@ with engine.connect() as db:
             for item in json.loads(page):
                 pid = item.get("regex_property_identifier")
                 if pid not in known_identifiers:
-                    orphans.append((exp_type, pid, item.get("identifier"), item.get("expression") or item.get("regex")))
+                    orphans.append(
+                        (
+                            exp_type,
+                            pid,
+                            item.get("identifier"),
+                            item.get("expression") or item.get("regex"),
+                        )
+                    )
 
     print(f"\nTotal orphaned expressions: {len(orphans)}")
-    print("\nFirst 15 orphans (type, missing_parent_identifier, expression_id, expression_snippet):")
+    print(
+        "\nFirst 15 orphans (type, missing_parent_identifier, expression_id, expression_snippet):"
+    )
     for o in orphans[:15]:
         print(f"  {o[0]:6s} | parent={o[1]} | expr_id={o[2]} | {str(o[3])[:60]}")
