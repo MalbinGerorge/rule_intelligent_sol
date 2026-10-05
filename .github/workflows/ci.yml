@@ -1,0 +1,38 @@
+# Continuous Integration: runs on every pull request into development/main
+# and on every push to those branches (i.e. after a merge).
+name: CI
+
+on:
+  pull_request:
+    branches: [development, main]
+  push:
+    branches: [development, main]
+
+# Least privilege: this workflow only needs to read the code.
+permissions:
+  contents: read
+
+# If you push again to the same PR while CI is still running, cancel the
+# old run -- only the latest commit's result matters.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10
+
+      # --only-group dev installs just the dev tools (ruff, pytest) at the
+      # versions pinned in uv.lock -- not the app's heavy dependencies
+      # (torch, sentence-transformers, ...), which linting doesn't need.
+      # --output-format=github turns findings into inline PR annotations.
+      - name: Ruff lint
+        run: uv run --only-group dev ruff check --output-format=github .
