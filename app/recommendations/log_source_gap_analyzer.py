@@ -23,8 +23,8 @@ from neo4j import Driver
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.api.schemas.recommendations import LogSourceGap, PeerRuleSuggestion
 from app.recommendations.log_source_lookup import get_onboarded_log_source_types
-from app.api.schemas.recommendations import PeerRuleSuggestion, LogSourceGap
 
 logger = structlog.get_logger(__name__)
 

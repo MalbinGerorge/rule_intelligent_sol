@@ -11,21 +11,21 @@ from sqlalchemy.orm import Session
 
 from app.rule_analyzer.aql_prompt_templates import AQL_TOOL_DESCRIPTION
 from app.rule_analyzer.chain_analysis import analyze_rule_chain
+from app.rule_analyzer.final_report_schema import FinalReport
 from app.rule_analyzer.investigation_state import InvestigationState
 from app.rule_analyzer.investigation_tools import (
+    check_field_extraction_configured,
+    check_field_population_rate,
     check_log_source_status,
     check_reference_data_dependencies,
     check_reference_set_contents,
     check_rule_timing,
     get_shared_dependents,
     run_aql_event_search,
-    check_field_extraction_configured,
-    check_field_population_rate,
 )
 from app.rule_analyzer.llm_provider import LLMProvider
 from app.rule_analyzer.rule_chain_context import format_full_chain_inline
 from app.services.qradar_client import QRadarClient
-from app.rule_analyzer.final_report_schema import FinalReport
 
 _INVESTIGATION_SYSTEM_PROMPT = """You are continuing your analysis of a QRadar rule, now with access to investigation tools.
 

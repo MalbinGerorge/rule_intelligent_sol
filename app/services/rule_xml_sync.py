@@ -22,9 +22,9 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.services.bb_parse_scheduler import get_rules_needing_bb_parse, mark_bb_parsed
-from app.services.rule_xml_parser import extract_bb_references
 from app.services.rule_condition_parser import parse_rule_conditions
 from app.services.rule_response_parser import extract_rule_response
+from app.services.rule_xml_parser import extract_bb_references
 
 
 def sync_rule_xml_data(db: Session, customer_id: int) -> dict:

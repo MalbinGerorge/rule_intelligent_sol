@@ -14,21 +14,28 @@ so a partial failure is visible per-endpoint rather than all-or-nothing.
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import argparse
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import text
 
 from app.core.config import settings
 from app.db.session import engine
-from app.services.qradar_client import QRadarClient, QRadarAPIError
-from app.services.rule_ingest import upsert_rules, upsert_rules_reference, upsert_building_blocks_reference
-from app.services.offense_contribution_ingest import upsert_offense_contributions
-from app.services.mitre_mapping_ingest import upsert_mitre_mappings
-from app.services.log_source_type_ingest import upsert_log_source_types_reference
 from app.services.log_source_ingest import upsert_log_sources_reference
+from app.services.log_source_type_ingest import upsert_log_source_types_reference
+from app.services.mitre_mapping_ingest import upsert_mitre_mappings
+from app.services.offense_contribution_ingest import upsert_offense_contributions
+from app.services.qradar_client import QRadarAPIError, QRadarClient
+from app.services.rule_ingest import (
+    upsert_building_blocks_reference,
+    upsert_rules,
+    upsert_rules_reference,
+)
+
+
 def load_customer(name: str) -> dict:
     with engine.connect() as conn:
         row = conn.execute(
@@ -61,7 +68,7 @@ def record_sync_run(engine, customer_id: int, endpoint: str, status: str, record
             {
                 "customer_id": customer_id,
                 "endpoint": endpoint,
-                "started_at": started_at or datetime.now(timezone.utc),
+                "started_at": started_at or datetime.now(UTC),
                 "status": status,
                 "records": records,
                 "error": error,
@@ -83,7 +90,7 @@ def main() -> None:
     client = QRadarClient(host=customer["qradar_host"], token=customer["token"], verify_ssl=customer["verify_ssl"])
 
     # -- rules_with_data -> rules -----------------------------------------
-    started = datetime.now(timezone.utc)
+    started = datetime.now(UTC)
     try:
         pages = client.fetch_rules_with_data()
         with engine.begin() as session:
@@ -97,7 +104,7 @@ def main() -> None:
         ) from e
 
     # -- /analytics/rules -> rules_reference -------------------------------
-    started = datetime.now(timezone.utc)
+    started = datetime.now(UTC)
     try:
         pages = client.fetch_rules()
         with engine.begin() as session:
@@ -109,7 +116,7 @@ def main() -> None:
         print(f"[FAIL] rules (reference): {e} — continuing, this only affects validation")
 
     # -- building_blocks -> building_blocks_reference ------------------------
-    started = datetime.now(timezone.utc)
+    started = datetime.now(UTC)
     try:
         pages = client.fetch_building_blocks()
         with engine.begin() as session:
@@ -122,7 +129,7 @@ def main() -> None:
 
 
     # -- log_source_types -> log_source_types_reference ----------------------
-    started = datetime.now(timezone.utc)
+    started = datetime.now(UTC)
     try:
         pages = client.fetch_log_source_types()
         with engine.begin() as session:
@@ -136,7 +143,7 @@ def main() -> None:
 
 
     # -- log_sources -> log_sources_reference (the REAL "onboarded" signal) --
-    started = datetime.now(timezone.utc)
+    started = datetime.now(UTC)
     try:
         pages = client.fetch_log_sources()
         with engine.begin() as session:
@@ -149,7 +156,7 @@ def main() -> None:
 
 
     # -- rules_offense_contributions ----------------------------------------
-    started = datetime.now(timezone.utc)
+    started = datetime.now(UTC)
     try:
         pages = client.fetch_rules_offense_contributions()
         with engine.begin() as session:
@@ -161,7 +168,7 @@ def main() -> None:
         print(f"[FAIL] rules_offense_contributions: {e} — continuing")
 
     # -- MITRE coverage, per rule identifier ---------------------------------
-    started = datetime.now(timezone.utc)
+    started = datetime.now(UTC)
     with engine.connect() as conn:
         identifiers = [
             row[0] for row in conn.execute(

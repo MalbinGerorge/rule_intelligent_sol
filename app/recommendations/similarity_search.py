@@ -46,11 +46,11 @@ import structlog
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+
+from app.api.schemas.recommendations import PeerRuleSuggestion, SimilaritySearchResult
 from app.core.config import settings
 from app.recommendations.embedding_service import CHROMA_COLLECTION_NAME, build_embedding_text
 from app.recommendations.reranker import Reranker
-from app.api.schemas.recommendations import SimilaritySearchResult, PeerRuleSuggestion
-
 
 logger = structlog.get_logger(__name__)
 

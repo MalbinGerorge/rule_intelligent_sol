@@ -27,8 +27,9 @@ refresh is simple, uniform, and correctly handles deletions on the
 QRadar side too (which pure modification-date comparison alone would
 never catch).
 """
-from alembic import op
 import sqlalchemy as sa
+
+from alembic import op
 
 revision = "ea8c6f14d460"
 down_revision = "852bbc4dadf2"

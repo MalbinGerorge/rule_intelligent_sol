@@ -4,14 +4,14 @@ Revision ID: a1da7d1f480e
 Revises: b72350ee8297
 Create Date: 2026-08-07 09:29:56.221978
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 from alembic import op
 
 revision: str = 'a1da7d1f480e'
-down_revision: Union[str, None] = 'b72350ee8297'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = 'b72350ee8297'
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:

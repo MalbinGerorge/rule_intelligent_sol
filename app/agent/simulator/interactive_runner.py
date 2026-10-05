@@ -15,7 +15,7 @@ answer mechanism (this loop's logic doesn't care which).
 """
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
 import structlog
 

@@ -20,9 +20,10 @@ No UNIQUE constraint on (customer_id, rule_id) -- deliberate: multiple
 rows per rule over time are the whole point, a real history, not a
 single overwritten snapshot.
 """
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 revision = "3487bfa37cbd"
 down_revision = "354ac644fcc5"

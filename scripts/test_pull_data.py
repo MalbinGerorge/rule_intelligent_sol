@@ -15,11 +15,12 @@ Prerequisite: the customer must already exist via scripts/push_credentials.py.
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import argparse
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from sqlalchemy import text
@@ -84,7 +85,7 @@ def main() -> None:
     print("*"*100)
 
 
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     out_dir = Path("logs/raw_pulls") / args.name / timestamp
 
     print(f"Pulling data for '{args.name}' ({customer['qradar_host']}) -> {out_dir}\n")

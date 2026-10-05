@@ -28,10 +28,10 @@ from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
 from app.agent.simulator.attack_interpreter import AttackInterpreterAgent
+from app.agent.simulator.dsm_property_extractor_trial import DSMPropertyExtractor
 from app.agent.simulator.mitre_validator import MitreTechniqueValidator
 from app.agent.simulator.orchestrator import SimulatorOrchestrator
 from app.agent.simulator.reference_log_retriever import ReferenceLogRetriever
-from app.agent.simulator.dsm_property_extractor_trial import DSMPropertyExtractor
 from app.core.logging_config import configure_logging, configure_simulator_logging
 from app.db.session import engine
 from app.rule_analyzer.llm_provider import LLMProvider

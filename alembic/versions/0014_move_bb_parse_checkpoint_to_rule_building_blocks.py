@@ -4,16 +4,17 @@ Revision ID: 1840ebd19dac
 Revises: a1da7d1f480e
 Create Date: 2026-08-07 09:41:16.299076
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 revision: str = '1840ebd19dac'
-down_revision: Union[str, None] = 'a1da7d1f480e'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = 'a1da7d1f480e'
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:

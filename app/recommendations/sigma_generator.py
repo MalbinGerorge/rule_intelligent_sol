@@ -12,8 +12,15 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.recommendations.sigma_prompts import build_correlation_generation_prompt, build_sigma_generation_prompt
-from app.recommendations.sigma_schema import SigmaCorrelationGeneration, SigmaDetection, SigmaRuleGeneration
+from app.recommendations.sigma_prompts import (
+    build_correlation_generation_prompt,
+    build_sigma_generation_prompt,
+)
+from app.recommendations.sigma_schema import (
+    SigmaCorrelationGeneration,
+    SigmaDetection,
+    SigmaRuleGeneration,
+)
 from app.rule_analyzer.llm_provider import LLMProvider
 from app.rule_analyzer.rule_chain_context import format_full_chain_inline
 

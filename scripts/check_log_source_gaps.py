@@ -9,6 +9,7 @@ Usage:
 """
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import argparse
@@ -17,7 +18,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
 from app.db.session import engine
-from app.graph.client import get_driver, close_driver
+from app.graph.client import close_driver, get_driver
 from app.recommendations.log_source_gap_analyzer import LogSourceGapAnalyzer
 
 

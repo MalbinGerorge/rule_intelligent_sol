@@ -19,27 +19,32 @@ from app.api.schemas.embeddings import (
     SimilaritySearchRequest,
 )
 from app.api.schemas.recommendations import (
+    LogSourceGap,
+    MitreGap,
     SigmaGenerationJobCreateResponse,
     SigmaGenerationJobDetail,
     SigmaGenerationRequest,
+    SimilaritySearchResult,
 )
 from app.core.exceptions import NotFoundError
-from app.dependencies.db import get_db
 from app.db.session import engine as sync_engine
+from app.dependencies.db import get_db
 from app.graph.client import get_driver
-from app.recommendations.embedding_batch_runner import create_pending_embedding_job, run_embedding_batch_task
+from app.recommendations.embedding_batch_runner import (
+    create_pending_embedding_job,
+    run_embedding_batch_task,
+)
 from app.recommendations.embedding_service import get_stale_representations
+from app.recommendations.log_source_gap_analyzer import LogSourceGapAnalyzer
+from app.recommendations.mitre_gap_analyzer import MitreGapAnalyzer
 from app.recommendations.sigma_batch_runner import (
     create_pending_sigma_job,
     get_rule_ids_with_existing_sigma,
     resolve_rule_names_to_canonical_rules,
     run_sigma_batch_task,
 )
-from app.services.rule_query import list_canonical_rules
-from app.api.schemas.recommendations import LogSourceGap, MitreGap, SimilaritySearchResult
-from app.recommendations.log_source_gap_analyzer import LogSourceGapAnalyzer
-from app.recommendations.mitre_gap_analyzer import MitreGapAnalyzer
 from app.recommendations.similarity_search import SimilaritySearchService
+from app.services.rule_query import list_canonical_rules
 
 router = APIRouter(prefix="/recommendations", tags=["recommendations"])
 

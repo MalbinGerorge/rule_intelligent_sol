@@ -10,7 +10,7 @@ visible rather than hidden.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 def _epoch_ms_to_dt(value) -> datetime | None:
     if value is None:
         return None
-    return datetime.fromtimestamp(value / 1000, tz=timezone.utc)
+    return datetime.fromtimestamp(value / 1000, tz=UTC)
 
 
 def upsert_offense_contributions(session: Session, customer_id: int, pages: list[str]) -> tuple[int, int]:

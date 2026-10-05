@@ -34,10 +34,10 @@ TEST_DB_NAME = (
 os.environ["POSTGRES_DB_NAME"] = TEST_DB_NAME
 
 import pytest
-from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine, text
 
+from alembic import command
 from app.core.config import settings
 from app.db.session import engine
 

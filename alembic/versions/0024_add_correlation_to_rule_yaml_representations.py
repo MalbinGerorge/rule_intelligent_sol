@@ -12,9 +12,10 @@ single Sigma detection block. Real Sigma requires TWO separate linked
 documents: a "base" detection rule (given a `name`) and a `correlation`
 rule referencing it by that name.
 """
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 revision = "202608241719"
 down_revision = "202608211535"

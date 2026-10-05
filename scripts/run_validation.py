@@ -12,6 +12,7 @@ Postgres, it doesn't hit the QRadar API itself.
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import argparse
@@ -19,7 +20,7 @@ import argparse
 from sqlalchemy import text
 
 from app.db.session import engine
-from app.services.validation import validate_rules, validate_building_blocks
+from app.services.validation import validate_building_blocks, validate_rules
 
 
 def main() -> None:

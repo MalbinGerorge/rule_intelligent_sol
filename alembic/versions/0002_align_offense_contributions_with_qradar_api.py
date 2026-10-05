@@ -4,16 +4,17 @@ Revision ID: 956e583aa776
 Revises: c7097f2544b3
 Create Date: 2026-08-05 13:37:28.031014
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 revision: str = '956e583aa776'
-down_revision: Union[str, None] = 'c7097f2544b3'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = 'c7097f2544b3'
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:

@@ -33,6 +33,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.agent.simulator.schemas import ExtractedProperties, ExtractedProperty, ReferenceLogSample
+
 logger = structlog.get_logger(__name__)
 
 _KEY_PATTERN = re.compile(r"^[A-Za-z_][\w\-\.]*$")

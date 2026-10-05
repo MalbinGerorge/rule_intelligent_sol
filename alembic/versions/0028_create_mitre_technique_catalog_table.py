@@ -11,9 +11,10 @@ github.com/mitre-attack/attack-stix-data). Used by MitreGapAnalyzer
 to compare a customer's ACTUAL technique coverage (rule_mitre_unified)
 against the full official framework, not just what's been observed.
 """
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 revision = "202609081537"
 down_revision = "202609042337"

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -20,7 +20,7 @@ _BB_SUBTYPE_RE = re.compile(r"^BB:([^:]+):")
 def _epoch_ms_to_dt(value) -> datetime | None:
     if value is None:
         return None
-    return datetime.fromtimestamp(value / 1000, tz=timezone.utc)
+    return datetime.fromtimestamp(value / 1000, tz=UTC)
 
 
 def _bb_subtype(name: str | None) -> str | None:

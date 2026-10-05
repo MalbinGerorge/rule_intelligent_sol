@@ -31,10 +31,11 @@ LOCALLY (no rule content ever transmitted externally for embedding),
 an extra layer of protection on top of the de-identification the LLM
 performs when generating the Sigma representation itself.
 """
-from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 from pgvector.sqlalchemy import Vector
+from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 revision = "202608211535"
 down_revision = "202608201644"

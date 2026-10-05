@@ -11,8 +11,9 @@ the background task finishes. Confirmed via test: the runner's
 try/except guarantees a terminal status is ALWAYS written, even on
 failure -- a row can never be left stuck at 'running' forever.
 """
-from alembic import op
 import sqlalchemy as sa
+
+from alembic import op
 
 revision = "202608201644"
 down_revision = "3487bfa37cbd"

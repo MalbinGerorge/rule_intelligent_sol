@@ -8,21 +8,23 @@ HOW LONG -- rather than opaque. NOTE: this only helps DIAGNOSE a
 hang (you'll see it stuck on rule X); it can't recover from a true
 infinite loop (e.g. circular BB references) -- only Ctrl+C can.
 """
-import sys
 import os
+import sys
 import time
 from datetime import datetime
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 CUSTOMER_NAME = "cotecna"
 os.environ["LANGCHAIN_PROJECT"] = f"{CUSTOMER_NAME}-sigma-generation"
 
 from sqlalchemy import text
+
 from app.db.session import engine
+from app.recommendations.sigma_generator import SigmaGenerator
 from app.rule_analyzer.llm_provider import LLMProvider
 from app.services.rule_query import list_canonical_rules
-from app.recommendations.sigma_generator import SigmaGenerator
 
 FAILURE_LOG_PATH = Path(__file__).resolve().parent.parent / "app" / "recommendations" / "sigma_batch_failures.md"
 

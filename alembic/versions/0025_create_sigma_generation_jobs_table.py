@@ -15,9 +15,10 @@ processed_rules/failed_rules update INCREMENTALLY during the run (not
 just at the end) so polling shows live progress on a run that could
 take a long time (700+ rules, one LLM call each).
 """
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 revision = "202608251341"
 down_revision = "202608241719"

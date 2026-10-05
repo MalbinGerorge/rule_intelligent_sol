@@ -2,8 +2,9 @@ from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.models.customer_credentials import CustomerCredentials
+
 from app.db.base import Base
+from app.models.customer_credentials import CustomerCredentials
 
 
 class Customer(Base):

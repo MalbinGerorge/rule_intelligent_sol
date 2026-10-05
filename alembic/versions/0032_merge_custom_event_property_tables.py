@@ -8,8 +8,9 @@ full-refresh sync (see custom_property_sync.py's own docstring) --
 nothing here is hand-entered or unrecoverable. A fresh sync run
 repopulates everything immediately after this migration.
 """
-from alembic import op
 import sqlalchemy as sa
+
+from alembic import op
 
 revision = "202609271707"
 down_revision = "202609111828"

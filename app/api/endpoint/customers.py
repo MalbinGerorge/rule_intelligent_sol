@@ -1,7 +1,9 @@
 from __future__ import annotations
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+
 from app.api.schemas.customers import CustomerListResponse, CustomerSummary
 from app.dependencies.db import get_db
 

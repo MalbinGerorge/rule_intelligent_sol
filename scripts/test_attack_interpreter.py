@@ -13,9 +13,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from app.agent.simulator.attack_interpreter import AttackInterpreterAgent
 from app.core.logging_config import configure_logging, configure_simulator_logging
 from app.rule_analyzer.llm_provider import LLMProvider
-from app.agent.simulator.attack_interpreter import AttackInterpreterAgent
 
 configure_logging(log_level="INFO")
 configure_simulator_logging(log_level="INFO")

@@ -13,15 +13,14 @@ agreed sequencing.
 from __future__ import annotations
 
 import json as _json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.services.qradar_client import QRadarAPIError, QRadarClient
-from app.rule_analyzer.aql_safety import UnsafeAQLError, validate_aql
+from app.rule_analyzer.aql_safety import UnsafeAQLError, _resolve_max_days, validate_aql
 from app.rule_analyzer.rule_chain_context import resolve_identifier_to_rule_id
-from app.rule_analyzer.aql_safety import _resolve_max_days
+from app.services.qradar_client import QRadarAPIError, QRadarClient
 
 
 def _format_time_ago(dt: datetime | None) -> str:
@@ -32,9 +31,9 @@ def _format_time_ago(dt: datetime | None) -> str:
     calculation it might get wrong."""
     if dt is None:
         return "unknown"
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
     delta = now - dt
     seconds = delta.total_seconds()
     if seconds < 3600:
@@ -267,7 +266,7 @@ def check_log_source_status(db: Session, qradar_client: QRadarClient, customer_i
     if not enabled_ones:
         return "\n".join(lines)
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     buckets: dict[str, list[dict]] = {
         "under_1w": [], "1_to_2w": [], "2_to_3w": [], "over_3w": [], "never": [],
     }
@@ -276,7 +275,7 @@ def check_log_source_status(db: Session, qradar_client: QRadarClient, customer_i
         if not last_event_ms:
             buckets["never"].append(ls)
             continue
-        last_event_dt = datetime.fromtimestamp(last_event_ms / 1000, tz=timezone.utc)
+        last_event_dt = datetime.fromtimestamp(last_event_ms / 1000, tz=UTC)
         age_days = (now - last_event_dt).days
         if age_days < 7:
             buckets["under_1w"].append(ls)

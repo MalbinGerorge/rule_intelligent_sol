@@ -27,8 +27,9 @@ customer's own Custom Event Properties. Resolving it needs ingesting
 each customer's Custom Event Property list (a separate, later piece
 of work) -- stored as a bare number for now so nothing is lost.
 """
-from alembic import op
 import sqlalchemy as sa
+
+from alembic import op
 
 revision = "852bbc4dadf2"
 down_revision = "b53430f4243a"

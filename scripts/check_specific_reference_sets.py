@@ -1,8 +1,10 @@
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from sqlalchemy import text
+
 from app.db.session import engine
 from app.services.qradar_client_factory import build_qradar_client_for_customer
 
@@ -39,6 +41,7 @@ with engine.connect() as db:
     client = build_qradar_client_for_customer(db, customer_id)
 
 import json
+
 pages = client.fetch_reference_sets()
 all_sets = []
 for page in pages:
