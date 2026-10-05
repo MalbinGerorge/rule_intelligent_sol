@@ -155,9 +155,13 @@ class SimilaritySearchService:
         rows_dicts = [dict(r) for r in rows]
         candidate_texts = [build_embedding_text(r) for r in rows_dicts]
         raw_rerank_scores = self.reranker.rerank(query, candidate_texts)
-        raw_rerank_score_by_rule_id = {r["rule_id"]: s for r, s in zip(rows_dicts, raw_rerank_scores)}
+        # strict=True: one score per candidate is required -- a length
+        # mismatch must fail loudly, not silently drop candidates.
+        raw_rerank_score_by_rule_id = {
+            r["rule_id"]: s for r, s in zip(rows_dicts, raw_rerank_scores, strict=True)
+        }
         rerank_score_by_rule_id = {
-            r["rule_id"]: _sigmoid(s) for r, s in zip(rows_dicts, raw_rerank_scores)
+            r["rule_id"]: _sigmoid(s) for r, s in zip(rows_dicts, raw_rerank_scores, strict=True)
         }
 
         suggestions = []

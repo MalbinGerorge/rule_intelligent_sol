@@ -40,15 +40,24 @@ testpaths = ["tests"]
 
 [tool.ruff]
 target-version = "py311"
+line-length = 100
 extend-exclude = ["frontend"]
 
 [tool.ruff.lint]
-# Start with the rules that catch real bugs (pyflakes F: undefined names,
-# unused imports/variables, redefinitions; E4/E7/E9: import and syntax
-# errors). Style rules (import sorting, pyupgrade, bugbear, formatting) are
-# enabled in a later, separate step so their large mechanical diff stays
-# reviewable on its own.
-select = ["E4", "E7", "E9", "F"]
+select = [
+    "E4", "E7", "E9", "F",  # real errors: syntax, undefined names, unused imports/variables
+    "I",                    # isort: consistent import order and grouping
+    "UP",                   # pyupgrade: modern syntax for the target Python version
+    "B",                    # bugbear: likely bugs and design traps
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI's dependency-injection markers are designed to be called in
+# default arguments; they don't hold mutable state between requests.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Path", "fastapi.Body"]
 
 [tool.ruff.lint.per-file-ignores]
 # conftest must set environment variables before importing `app`.

@@ -92,7 +92,9 @@ def main() -> None:
         print(f"[OK] rules_with_data -> rules: {n} upserted")
     except QRadarAPIError as e:
         record_sync_run(engine, customer_id, "rules_with_data", "error", 0, str(e), started_at=started)
-        raise SystemExit(f"[FAIL] rules_with_data: {e} — aborting, everything else depends on this")
+        raise SystemExit(
+            f"[FAIL] rules_with_data: {e} — aborting, everything else depends on this"
+        ) from e
 
     # -- /analytics/rules -> rules_reference -------------------------------
     started = datetime.now(timezone.utc)

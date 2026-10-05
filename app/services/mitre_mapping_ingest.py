@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 def parse_mitre_coverage(raw: dict) -> list[dict]:
     """Flattens one rule's mitre_coverage payload into row dicts."""
     rows = []
-    for rule_name_key, rule_data in raw.items():
+    for rule_data in raw.values():
         mapping = rule_data.get("mapping", {})
         if not mapping:
             continue  # no coverage at all for this rule — no rows, which is correct
