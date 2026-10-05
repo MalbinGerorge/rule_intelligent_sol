@@ -27,7 +27,6 @@ from app.services.qradar_client_factory import build_qradar_client_for_customer
 from app.core.logging_config import configure_logging, configure_simulator_logging
 from app.db.session import engine
 from app.rule_analyzer.llm_provider import LLMProvider
-from app.services.qradar_client import QRadarClient
 
 
 def _short(value: str, limit: int = 80) -> str:

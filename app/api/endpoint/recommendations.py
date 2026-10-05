@@ -36,7 +36,7 @@ from app.recommendations.sigma_batch_runner import (
     run_sigma_batch_task,
 )
 from app.services.rule_query import list_canonical_rules
-from app.api.schemas.recommendations import LogSourceGap, MitreGap, PeerRuleSuggestion, SimilaritySearchResult
+from app.api.schemas.recommendations import LogSourceGap, MitreGap, SimilaritySearchResult
 from app.recommendations.log_source_gap_analyzer import LogSourceGapAnalyzer
 from app.recommendations.mitre_gap_analyzer import MitreGapAnalyzer
 from app.recommendations.similarity_search import SimilaritySearchService

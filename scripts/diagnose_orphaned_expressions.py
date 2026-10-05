@@ -1,5 +1,6 @@
 # scripts/diagnose_orphaned_expressions.py
-import sys, json
+import sys
+import json
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from sqlalchemy import text

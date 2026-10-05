@@ -1,10 +1,16 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.models.mitre_mapping import MitreMapping
+    from app.models.rule_building_block import RuleBuildingBlock
+    from app.models.rule_offense_contribution import RuleOffenseContribution
 
 
 class Rule(Base):

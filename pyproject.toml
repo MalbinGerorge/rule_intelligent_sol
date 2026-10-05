@@ -37,3 +37,21 @@ pythonpath = ["."]
 # Only tests/ runs by default. evals/ hits real LLMs, QRadar and dev data
 # and is run by hand: `uv run pytest evals/<suite>`.
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+extend-exclude = ["frontend"]
+
+[tool.ruff.lint]
+# Start with the rules that catch real bugs (pyflakes F: undefined names,
+# unused imports/variables, redefinitions; E4/E7/E9: import and syntax
+# errors). Style rules (import sorting, pyupgrade, bugbear, formatting) are
+# enabled in a later, separate step so their large mechanical diff stays
+# reviewable on its own.
+select = ["E4", "E7", "E9", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+# conftest must set environment variables before importing `app`.
+"tests/conftest.py" = ["E402"]
+# Standalone scripts adjust sys.path / os.environ before importing `app`.
+"scripts/**" = ["E402"]
