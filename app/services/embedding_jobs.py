@@ -28,11 +28,9 @@ from app.ai.retrieval.embedding_service import (
     build_embedding_text,
     mark_embedded,
 )
+from app.core.config import settings
 
 logger = structlog.get_logger(__name__)
-
-CHROMA_HOST = "localhost"
-CHROMA_PORT = 8001
 
 
 def create_pending_embedding_job(engine: Engine, total: int) -> int:
@@ -64,7 +62,7 @@ def run_embedding_batch(engine: Engine, job_id: int, representations: list[dict]
 
     try:
         model = SentenceTransformer(EMBEDDING_MODEL_NAME)
-        client = chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT)
+        client = chromadb.HttpClient(host=settings.chroma_host, port=settings.chroma_port)
         collection = client.get_or_create_collection(CHROMA_COLLECTION_NAME)
 
         for row in representations:
