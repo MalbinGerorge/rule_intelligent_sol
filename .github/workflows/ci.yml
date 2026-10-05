@@ -107,6 +107,11 @@ jobs:
       - name: Run tests
         run: uv run pytest -ra
 
+      # docs/api/openapi.json is the contract the frontend generates its
+      # client from; fail if a route/schema changed without regenerating it.
+      - name: API contract up to date
+        run: uv run python scripts/export_openapi.py --check
+
   security:
     name: Security (gitleaks, pip-audit)
     runs-on: ubuntu-latest
