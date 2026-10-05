@@ -3,7 +3,7 @@ Structured logging setup. configure_logging() sets up the general
 app.log (console + rotating file), same as before.
 
 configure_simulator_logging() is a SEPARATE, additional setup --
-routes everything logged under the "app.agents.simulator" namespace
+routes everything logged under the SIMULATOR_LOGGER_NAME namespace
 (every module there uses structlog.get_logger(__name__), so this
 covers attack_interpreter, and every future agent added under that
 package) into its own file, logs/simulator.log, instead of the
@@ -24,6 +24,10 @@ import structlog
 LOG_DIR = Path(__file__).resolve().parent.parent.parent / "logs"
 LOG_FILE = LOG_DIR / "app.log"
 SIMULATOR_LOG_FILE = LOG_DIR / "simulator.log"
+# Package whose modules log via structlog.get_logger(__name__). A string,
+# not an import, so core/ doesn't depend on ai/ -- tests/test_logging.py
+# fails if the simulator package moves and this isn't updated.
+SIMULATOR_LOGGER_NAME = "app.ai.agents.simulator"
 
 MAX_BYTES = 10 * 1024 * 1024
 BACKUP_COUNT = 5
@@ -96,7 +100,7 @@ def configure_simulator_logging(log_level: str = "INFO") -> None:
     )
     file_handler.setFormatter(file_formatter)
 
-    simulator_logger = logging.getLogger("app.agent.simulator")
+    simulator_logger = logging.getLogger(SIMULATOR_LOGGER_NAME)
     simulator_logger.handlers = [file_handler]
     simulator_logger.setLevel(log_level)
     simulator_logger.propagate = False  # don't ALSO send these to app.log

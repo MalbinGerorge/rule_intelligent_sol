@@ -23,9 +23,9 @@ os.environ["LANGCHAIN_PROJECT"] = f"{CUSTOMER_NAME}-sigma-generation"
 from sqlalchemy import text
 
 from app.ai.llm.provider import LLMProvider
+from app.ai.sigma.generator import SigmaGenerator
 from app.db.session import engine
-from app.recommendations.sigma_generator import SigmaGenerator
-from app.services.rule_query import list_canonical_rules
+from app.repositories.rules import list_canonical_rules
 
 FAILURE_LOG_PATH = (
     Path(__file__).resolve().parent.parent / "app" / "recommendations" / "sigma_batch_failures.md"

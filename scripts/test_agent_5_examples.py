@@ -4,7 +4,7 @@ different paths through the graph. Run this AFTER starting the server
 with real Azure OpenAI credentials in .env.
 
 Usage:
-    uv run uvicorn app.main:app --reload --port 8000   (in one terminal)
+    uv run uvicorn app.api.main:app --reload --port 8000   (in one terminal)
     uv run python scripts/test_agent_5_examples.py       (in another)
 """
 

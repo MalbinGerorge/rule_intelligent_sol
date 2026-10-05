@@ -20,7 +20,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.db.session import engine
 from app.integrations.neo4j.client import close_driver, get_driver
-from app.recommendations.mitre_gap_analyzer import MitreGapAnalyzer
+from app.services.gap_analysis.mitre import MitreGapAnalyzer
 
 
 def main() -> None:

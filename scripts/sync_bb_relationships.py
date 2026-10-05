@@ -17,7 +17,7 @@ import argparse
 from sqlalchemy import text
 
 from app.db.session import engine
-from app.services.rule_xml_sync import sync_rule_xml_data
+from app.ingestion.jobs.rule_xml_sync import sync_rule_xml_data
 
 
 def main() -> None:
