@@ -22,9 +22,9 @@ os.environ["LANGCHAIN_PROJECT"] = f"{CUSTOMER_NAME}-sigma-generation"
 
 from sqlalchemy import text
 
+from app.ai.llm.provider import LLMProvider
 from app.db.session import engine
 from app.recommendations.sigma_generator import SigmaGenerator
-from app.rule_analyzer.llm_provider import LLMProvider
 from app.services.rule_query import list_canonical_rules
 
 FAILURE_LOG_PATH = (

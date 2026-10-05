@@ -43,7 +43,7 @@ import structlog
 from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
-from app.core.logging_config import configure_logging
+from app.core.logging import configure_logging
 from app.db.session import engine
 from app.recommendations.similarity_search import SimilaritySearchService
 

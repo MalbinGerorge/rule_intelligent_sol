@@ -23,7 +23,7 @@ import time
 import structlog
 
 from app.agent.simulator.schemas import AttackStep, ReferenceLogSample
-from app.services.qradar_client import QRadarAPIError, QRadarClient
+from app.integrations.qradar.client import QRadarAPIError, QRadarClient
 
 logger = structlog.get_logger(__name__)
 

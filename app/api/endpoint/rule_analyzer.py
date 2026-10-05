@@ -14,13 +14,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.api.deps.db import get_db
 from app.api.schemas.rule_analyzer import (
     InvestigationCreateResponse,
     InvestigationDetail,
     InvestigationListItem,
     InvestigationListResponse,
 )
-from app.dependencies.db import get_db
 from app.services.investigation_runner import create_pending_investigation, run_investigation_task
 
 router = APIRouter(prefix="/rule-analyzer", tags=["rule-analyzer"])

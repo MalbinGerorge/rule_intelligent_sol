@@ -13,8 +13,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.graph.client import close_driver, get_driver
 from app.graph.schema_introspection import generate_schema_reference
+from app.integrations.neo4j.client import close_driver, get_driver
 
 
 def main() -> None:

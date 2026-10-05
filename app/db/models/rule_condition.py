@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 if TYPE_CHECKING:
-    from app.models.rule import Rule
+    from app.db.models.rule import Rule
 
 
 class RuleCondition(Base):

@@ -23,7 +23,7 @@ WHY this exists (for anyone new to Celery/Redis):
 
 Run the worker (from the project root, in its own terminal, alongside
 uvicorn):
-    uv run celery -A app.celery_app worker --loglevel=info --pool=solo
+    uv run celery -A app.workers.celery_app worker --loglevel=info --pool=solo
 
 (--pool=solo is required on Windows -- Celery's default "prefork" pool
 doesn't work there. On Linux/Mac, --pool=solo can be dropped.)

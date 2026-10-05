@@ -19,9 +19,9 @@ from datetime import UTC, datetime
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.integrations.qradar.client import QRadarAPIError, QRadarClient
 from app.rule_analyzer.aql_safety import UnsafeAQLError, _resolve_max_days, validate_aql
 from app.rule_analyzer.rule_chain_context import resolve_identifier_to_rule_id
-from app.services.qradar_client import QRadarAPIError, QRadarClient
 
 
 def _format_time_ago(dt: datetime | None) -> str:

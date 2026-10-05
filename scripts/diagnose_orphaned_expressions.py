@@ -7,8 +7,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from sqlalchemy import text
 
 from app.db.session import engine
+from app.integrations.qradar.client_factory import build_qradar_client_for_customer
 from app.services.custom_property_sync import _EXPRESSION_FETCHERS
-from app.services.qradar_client_factory import build_qradar_client_for_customer
 
 CUSTOMER_NAME = "cotecna"
 

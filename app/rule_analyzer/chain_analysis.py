@@ -16,7 +16,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.rule_analyzer.llm_provider import LLMProvider
+from app.ai.llm.provider import LLMProvider
 from app.rule_analyzer.rule_chain_context import format_full_chain_inline
 
 _SYSTEM_PROMPT = """You are a senior detection engineering analyst reviewing a QRadar rule's structure.

@@ -17,7 +17,7 @@ import json
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.services.qradar_client import QRadarClient
+from app.integrations.qradar.client import QRadarClient
 
 _EXPRESSION_FETCHERS = {
     "regex": "fetch_property_expressions",

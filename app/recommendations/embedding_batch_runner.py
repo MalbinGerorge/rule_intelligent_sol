@@ -141,8 +141,8 @@ def run_embedding_batch(engine: Engine, job_id: int, representations: list[dict]
             )
 
 
-from app.celery_app import celery_app  # noqa: E402
 from app.db.session import engine as _shared_engine  # noqa: E402
+from app.workers.celery_app import celery_app  # noqa: E402
 
 
 @celery_app.task(name="run_embedding_batch_task")

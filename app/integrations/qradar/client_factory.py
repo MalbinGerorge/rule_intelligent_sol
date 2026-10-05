@@ -11,7 +11,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.services.qradar_client import QRadarClient
+from app.integrations.qradar.client import QRadarClient
 
 
 def build_qradar_client_for_customer(db: Session, customer_id: int) -> QRadarClient:

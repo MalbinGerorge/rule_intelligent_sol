@@ -14,6 +14,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.api.deps.db import get_db
 from app.api.schemas.embeddings import (
     EmbeddingJobCreateResponse,
     EmbeddingJobDetail,
@@ -29,8 +30,7 @@ from app.api.schemas.recommendations import (
 )
 from app.core.exceptions import NotFoundError
 from app.db.session import engine as sync_engine
-from app.dependencies.db import get_db
-from app.graph.client import get_driver
+from app.integrations.neo4j.client import get_driver
 from app.recommendations.embedding_batch_runner import (
     create_pending_embedding_job,
     run_embedding_batch_task,

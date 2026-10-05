@@ -17,9 +17,9 @@ from __future__ import annotations
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
+from app.ai.llm.provider import LLMProvider
+from app.integrations.qradar.client_factory import build_qradar_client_for_customer
 from app.rule_analyzer.investigation_graph import run_investigation
-from app.rule_analyzer.llm_provider import LLMProvider
-from app.services.qradar_client_factory import build_qradar_client_for_customer
 
 
 def create_pending_investigation(engine: Engine, customer_id: int, rule_id: int) -> int:
@@ -98,8 +98,8 @@ def run_and_store_investigation(
 
 
 # Imported here rather than at the top to avoid a circular import at module load time.
-from app.celery_app import celery_app  # noqa: E402
 from app.db.session import engine as _shared_engine  # noqa: E402
+from app.workers.celery_app import celery_app  # noqa: E402
 
 
 @celery_app.task(name="run_investigation_task")

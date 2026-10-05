@@ -10,7 +10,7 @@ from neo4j import Driver
 
 from app.agent.agent_query_service import ask_graph
 from app.api.schemas.agent import AgentAskRequest, AgentAskResponse
-from app.graph.client import get_driver
+from app.integrations.neo4j.client import get_driver
 
 router = APIRouter(prefix="/agent", tags=["agent"])
 
