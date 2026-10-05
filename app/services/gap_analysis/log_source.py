@@ -24,8 +24,9 @@ from neo4j import Driver
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.api.v1.schemas.recommendations import LogSourceGap, PeerRuleSuggestion
+from app.ai.retrieval.models import PeerRuleSuggestion
 from app.services.gap_analysis.log_source_lookup import get_onboarded_log_source_types
+from app.services.gap_analysis.models import LogSourceGap
 
 logger = structlog.get_logger(__name__)
 

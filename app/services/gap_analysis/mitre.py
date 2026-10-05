@@ -27,23 +27,14 @@ from __future__ import annotations
 
 import structlog
 from neo4j import Driver
-from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.api.v1.schemas.recommendations import PeerRuleSuggestion
+from app.ai.retrieval.models import PeerRuleSuggestion
 from app.services.gap_analysis.log_source_lookup import get_onboarded_log_source_types
+from app.services.gap_analysis.models import MitreGap
 
 logger = structlog.get_logger(__name__)
-
-
-class MitreGap(BaseModel):
-    technique_id: str
-    technique_name: str | None
-    tactic_names: list[str]
-    is_subtechnique: bool
-    peer_customer_names: list[str]
-    suggested_rules: list[PeerRuleSuggestion]
 
 
 class MitreGapAnalyzer:

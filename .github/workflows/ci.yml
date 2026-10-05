@@ -45,6 +45,11 @@ jobs:
       - name: Ruff format
         run: uv run --only-group dev ruff format --check --diff .
 
+      # Architecture rules from docs/adr/0001: layers only import downward,
+      # agents stay independent. Contracts are in pyproject.toml.
+      - name: Import contracts (import-linter)
+        run: uv run --only-group dev lint-imports
+
   test:
     name: Test (pytest)
     runs-on: ubuntu-latest

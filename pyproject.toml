@@ -28,6 +28,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "import-linter>=2.15",
     "pip-audit>=2.10.1",
     "pytest>=9.1.1",
     "ruff>=0.16.1",
@@ -38,6 +39,37 @@ pythonpath = ["."]
 # Only tests/ runs by default. evals/ hits real LLMs, QRadar and dev data
 # and is run by hand: `uv run pytest evals/<suite>`.
 testpaths = ["tests"]
+
+[tool.importlinter]
+root_package = "app"
+
+# ADR 0001: imports only point downward. A layer may import any layer below
+# it, never one above. "|" separates modules on the same level that must
+# not import each other.
+[[tool.importlinter.contracts]]
+name = "Layers (ADR 0001)"
+type = "layers"
+layers = [
+    "app.api",
+    "app.workers",
+    "app.services",
+    "app.ai | app.ingestion",
+    "app.repositories",
+    "app.integrations",
+    "app.db",
+    "app.core",
+]
+
+# The three agents are separate products; shared AI code lives in
+# app.ai.llm / app.ai.context, not in another agent.
+[[tool.importlinter.contracts]]
+name = "Agents are independent"
+type = "independence"
+modules = [
+    "app.ai.agents.assistant",
+    "app.ai.agents.rule_analyzer",
+    "app.ai.agents.simulator",
+]
 
 [tool.ruff]
 target-version = "py311"
