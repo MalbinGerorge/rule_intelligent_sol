@@ -101,3 +101,52 @@ jobs:
       # runs `alembic upgrade head`, then the tests run against it.
       - name: Run tests
         run: uv run pytest -ra
+
+  security:
+    name: Security (gitleaks, pip-audit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # fetch-depth: 0 fetches the full history, so gitleaks scans every
+      # commit -- a secret added and deleted again within a PR still leaks.
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # Rules: .gitleaks.toml (built-in rules + a hardcoded-password rule).
+      # Accepted historical findings: .gitleaksignore (each with a reason).
+      # --redact keeps secret values out of the CI log. The image is pinned
+      # by digest for the same reason actions are pinned by SHA. The
+      # safe.directory setting lets git inside the container read a checkout
+      # owned by a different user.
+      - name: Secret scan (gitleaks)
+        run: >-
+          docker run --rm -v "$GITHUB_WORKSPACE:/repo"
+          -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0='*'
+          zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+          git /repo --config /repo/.gitleaks.toml --gitleaks-ignore-path /repo/.gitleaksignore
+          --redact --no-banner --verbose
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+
+      # Audits every locked dependency (app + dev tools) against known
+      # vulnerabilities. --require-hashes/--disable-pip: audit exactly the
+      # versions in uv.lock without installing anything.
+      #
+      # Accepted, with no fix available (review again 2026-12-31, or drop
+      # once Chroma is replaced by pgvector):
+      #   chromadb PYSEC-2026-311, -3813, -3814, -3815 -- code execution via
+      #   trust_remote_code and missing tenant checks, all in the Chroma
+      #   SERVER. Ours runs in Docker bound to 127.0.0.1 only, single-tenant,
+      #   and the app uses chromadb as a client without trust_remote_code.
+      - name: Dependency audit (pip-audit)
+        run: |
+          uv export --frozen --no-emit-project --format requirements-txt -o "$RUNNER_TEMP/requirements.txt"
+          uv run --only-group dev pip-audit -r "$RUNNER_TEMP/requirements.txt" \
+            --require-hashes --disable-pip --progress-spinner off \
+            --ignore-vuln PYSEC-2026-311 \
+            --ignore-vuln PYSEC-2026-3813 \
+            --ignore-vuln PYSEC-2026-3814 \
+            --ignore-vuln PYSEC-2026-3815
