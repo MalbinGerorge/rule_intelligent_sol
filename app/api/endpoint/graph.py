@@ -10,13 +10,13 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Query
 from neo4j import Session as Neo4jSession
 
+from app.api.deps.graph import get_graph_session
 from app.api.schemas.graph import (
     BuildingBlockDependent,
     FieldSearchResult,
     RuleGraphDetail,
     TechniqueSearchResult,
 )
-from app.dependencies.graph import get_graph_session
 from app.services import graph_query
 
 router = APIRouter(prefix="/graph", tags=["graph"])

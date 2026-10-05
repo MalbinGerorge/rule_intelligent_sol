@@ -8,9 +8,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 if TYPE_CHECKING:
-    from app.models.mitre_mapping import MitreMapping
-    from app.models.rule_building_block import RuleBuildingBlock
-    from app.models.rule_offense_contribution import RuleOffenseContribution
+    from app.db.models.mitre_mapping import MitreMapping
+    from app.db.models.rule_building_block import RuleBuildingBlock
+    from app.db.models.rule_offense_contribution import RuleOffenseContribution
 
 
 class Rule(Base):

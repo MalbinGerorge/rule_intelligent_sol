@@ -1,6 +1,6 @@
 from sqlalchemy.orm import configure_mappers
 
-import app.models  # noqa: F401 - registers every model
+import app.db.models  # noqa: F401 - registers every model
 
 
 def test_orm_mappers_configure():

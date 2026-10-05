@@ -27,7 +27,7 @@ from sqlalchemy import text
 
 from app.core.config import settings
 from app.db.session import engine
-from app.services.qradar_client import QRadarClient
+from app.integrations.qradar.client import QRadarClient
 
 
 def load_customer(name: str) -> dict:

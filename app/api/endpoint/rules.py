@@ -7,8 +7,8 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from app.api.deps.db import get_db
 from app.api.schemas.rule import RuleHealthMetrics, RuleListResponse, RuleSummary
-from app.dependencies.db import get_db
 from app.services import rule_query
 
 router = APIRouter(prefix="/rules", tags=["rules"])

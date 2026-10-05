@@ -10,6 +10,8 @@ from __future__ import annotations
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from sqlalchemy.orm import Session
 
+from app.ai.llm.provider import LLMProvider
+from app.integrations.qradar.client import QRadarClient
 from app.rule_analyzer.aql_prompt_templates import AQL_TOOL_DESCRIPTION
 from app.rule_analyzer.chain_analysis import analyze_rule_chain
 from app.rule_analyzer.final_report_schema import FinalReport
@@ -24,9 +26,7 @@ from app.rule_analyzer.investigation_tools import (
     get_shared_dependents,
     run_aql_event_search,
 )
-from app.rule_analyzer.llm_provider import LLMProvider
 from app.rule_analyzer.rule_chain_context import format_full_chain_inline
-from app.services.qradar_client import QRadarClient
 
 _INVESTIGATION_SYSTEM_PROMPT = """You are continuing your analysis of a QRadar rule, now with access to investigation tools.
 

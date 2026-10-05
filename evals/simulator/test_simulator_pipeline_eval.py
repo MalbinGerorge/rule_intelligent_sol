@@ -33,10 +33,10 @@ from app.agent.simulator.dsm_property_extractor_trial import DSMPropertyExtracto
 from app.agent.simulator.mitre_validator import MitreTechniqueValidator
 from app.agent.simulator.orchestrator import SimulatorOrchestrator
 from app.agent.simulator.reference_log_retriever import ReferenceLogRetriever
-from app.core.logging_config import configure_logging, configure_simulator_logging
+from app.ai.llm.provider import LLMProvider
+from app.core.logging import configure_logging, configure_simulator_logging
 from app.db.session import engine
-from app.rule_analyzer.llm_provider import LLMProvider
-from app.services.qradar_client_factory import build_qradar_client_for_customer
+from app.integrations.qradar.client_factory import build_qradar_client_for_customer
 
 TEST_CUSTOMER_NAME = "cotecna"
 

@@ -22,11 +22,11 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, System
 from langgraph.graph import END, StateGraph
 from sqlalchemy.orm import Session
 
+from app.ai.llm.provider import LLMProvider
+from app.integrations.qradar.client import QRadarClient
 from app.rule_analyzer.investigation_nodes import build_nodes
 from app.rule_analyzer.investigation_state import InvestigationState
-from app.rule_analyzer.llm_provider import LLMProvider
 from app.rule_analyzer.report_renderer import render_report
-from app.services.qradar_client import QRadarClient
 
 MAX_ITERATIONS = 4
 

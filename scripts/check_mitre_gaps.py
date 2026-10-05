@@ -19,7 +19,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
 from app.db.session import engine
-from app.graph.client import close_driver, get_driver
+from app.integrations.neo4j.client import close_driver, get_driver
 from app.recommendations.mitre_gap_analyzer import MitreGapAnalyzer
 
 

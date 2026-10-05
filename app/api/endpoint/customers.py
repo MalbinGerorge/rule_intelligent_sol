@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.api.deps.db import get_db
 from app.api.schemas.customers import CustomerListResponse, CustomerSummary
-from app.dependencies.db import get_db
 
 router = APIRouter(prefix="/customers", tags=["customers"])
 

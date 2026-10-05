@@ -21,8 +21,8 @@ from sqlalchemy import text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
+from app.ai.llm.provider import LLMProvider
 from app.recommendations.sigma_generator import SigmaGenerator
-from app.rule_analyzer.llm_provider import LLMProvider
 from app.services.rule_query import list_canonical_rules
 
 
@@ -145,8 +145,8 @@ def run_sigma_batch(
             )
 
 
-from app.celery_app import celery_app  # noqa: E402
 from app.db.session import engine as _shared_engine  # noqa: E402
+from app.workers.celery_app import celery_app  # noqa: E402
 
 
 @celery_app.task(name="run_sigma_batch_task")
