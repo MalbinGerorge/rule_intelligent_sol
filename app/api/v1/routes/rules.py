@@ -1,5 +1,5 @@
 """Rules API — thin HTTP layer. No SQL here (that's app/repositories/rules.py).
-Converts service-layer dicts into API schemas (app/api/schemas/rule.py) —
+Converts service-layer dicts into API schemas (app/api/v1/schemas/rule.py) —
 that conversion happens here, not in the service layer."""
 
 from __future__ import annotations

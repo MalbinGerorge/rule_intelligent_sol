@@ -7,7 +7,7 @@ each -- not just two deployments under one shared resource):
   - GPT-5.2 (reasoning_llm): analysis, root-cause reasoning, the ReAct
     investigation loop, final report synthesis. Anywhere being wrong
     is costly. Same model already used by the Q&A agent
-    (app/agent/agent_nodes.py) for the same reason.
+    (app/ai/agents/assistant/nodes.py) for the same reason.
   - GPT-4o/4.1 (fast_llm): cheap, lower-stakes sub-tasks. Not called by
     anything yet -- built now so the provider class doesn't need
     retrofitting once a genuinely lightweight step exists.

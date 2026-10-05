@@ -9,7 +9,7 @@ needs_reparse and mark it false would be a real bug: whichever ran
 last would find nothing left to process, since an earlier one already
 flipped the flag off. One combined pass per rule avoids that entirely.
 
-Supersedes app/services/bb_relationship_ingest.py's standalone
+Supersedes app/ingestion/jobs/bb_relationship_ingest.py's standalone
 sync_rule_building_blocks as the actual entrypoint to call — that
 function's logic is reused here unchanged, just no longer paired with
 its own flag reset.

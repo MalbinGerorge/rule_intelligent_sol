@@ -88,7 +88,7 @@ def run_sigma_batch(
     engine: Engine, job_id: int, customer_id: int, customer_name: str, rules: list[dict]
 ) -> None:
     """rules: list of {"id": rule_id, "name": rule_name}. CRITICAL
-    invariant, same as investigation_runner.py: a job must NEVER be
+    invariant, same as app/services/investigations.py: a job must NEVER be
     left stuck at status='running' forever, even if something
     catastrophic happens mid-run. A single rule's failure does NOT
     stop the batch -- it's recorded and processing continues."""

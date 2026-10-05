@@ -2,7 +2,7 @@
 Graph STRUCTURE for the Rule Analyzer's investigation loop -- which
 nodes exist, how they connect, and the routing/conditional-edge logic
 that decides where to go next. Node LOGIC (what each step actually
-does, the 6 tools, the prompts) lives in investigation_nodes.py; this
+does, the 6 tools, the prompts) lives in app/ai/agents/rule_analyzer/nodes.py; this
 file only wires things together.
 
 Genuinely dynamic -- unlike the Q&A agent's fixed generate->validate

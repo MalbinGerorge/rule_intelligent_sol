@@ -415,7 +415,7 @@ def format_full_chain_for_llm(full_chain: dict) -> str:
 
 def _extract_bb_ids_from_structured_data(structured_data: dict) -> list[str]:
     """Every place a condition can reference BB(s), across all the
-    structural shapes confirmed in rule_condition_parser.py. A given
+    structural shapes confirmed in app/ingestion/parsers/rule_condition.py. A given
     condition matches none of these when it's a plain field check
     (e.g. ArielFilterTest never references a BB)."""
     bb_ids: list[str] = []

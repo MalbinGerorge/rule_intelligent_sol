@@ -2,7 +2,7 @@
 Renders a structured FinalReport into consistent Markdown, EVERY time,
 regardless of how the LLM phrased anything internally -- this is the
 whole point of structuring the report first. Kept SEPARATE from the
-schema and from investigation_graph.py, same modularity discipline as
+schema and from app/ai/agents/rule_analyzer/graph.py, same modularity discipline as
 aql_prompt_templates.py: template content reviewable/tunable on its
 own.
 """

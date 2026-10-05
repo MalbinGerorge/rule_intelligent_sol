@@ -72,7 +72,7 @@ ENDPOINTS = {
     # QRadar's own API docs (pasted directly by the user). One parent
     # (regex_properties), seven children -- each child is a different
     # extraction MECHANISM depending on the log source's raw payload
-    # format. See app/services/custom_property_sync.py for how these
+    # format. See app/ingestion/jobs/custom_property_sync.py for how these
     # get combined into two Postgres tables.
     "regex_properties": "/api/config/event_sources/custom_properties/regex_properties",
     "property_expressions": "/api/config/event_sources/custom_properties/property_expressions",

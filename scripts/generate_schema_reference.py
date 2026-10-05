@@ -1,7 +1,7 @@
 """
 Generates docs/graph_schema_reference.md from live Neo4j introspection
 (Layer 1 of the AI-layer grounding design). Run manually whenever the
-graph schema changes — a new _load_*_edges function added to loader.py,
+graph schema changes — a new _load_*_edges function added to app/ingestion/jobs/graph_build.py,
 a relationship renamed, etc. Not called on every agent request.
 
 Usage:

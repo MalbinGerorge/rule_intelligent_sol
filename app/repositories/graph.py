@@ -1,11 +1,11 @@
 """
 Read-only Cypher query logic for the graph API (UI2). Mirrors
-app/services/rule_query.py's separation: this layer returns plain
+app/repositories/rules.py's separation: this layer returns plain
 dicts, never Pydantic — schema conversion happens in the endpoint layer.
 
 NOTE: FOLLOWED_BY edges connect two BUILDING BLOCKS, tagged with
 rel.rule_id identifying which rule DEFINED that sequence relationship
-(see loader.py's Option C design). So "this rule's sequence
+(see app/ingestion/jobs/graph_build.py's Option C design). So "this rule's sequence
 relationships" is found by filtering on that property, NOT by graph
 adjacency to the rule's own node.
 """

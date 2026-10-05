@@ -2,7 +2,7 @@
 Pydantic response schemas for the graph API (UI2).
 
 Condition/threshold shapes are genuinely variable across the ~60 test
-classes (see rule_condition_parser.py) — using dict[str, Any] here
+classes (see app/ingestion/parsers/rule_condition.py) — using dict[str, Any] here
 instead of forcing every possible field onto one rigid schema, same
 flexible-JSON philosophy already used for rule_conditions.structured_data
 on the Postgres side.

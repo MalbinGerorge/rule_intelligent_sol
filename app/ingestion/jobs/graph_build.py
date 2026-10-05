@@ -366,7 +366,7 @@ def _load_followed_by_edges(driver: Driver, db: Session, customer_id: int) -> in
     from real data this genuinely happens (57 raw pairs, 32 distinct
     BB-pairs — meaning several rules already share the same pair).
 
-    Pair-generation differs per class (see rule_condition_parser.py
+    Pair-generation differs per class (see app/ingestion/parsers/rule_condition.py
     for the confirmed shapes):
       - SequenceFunction_Test: ORDERED CHAIN — consecutive pairs
         (bb[0]->bb[1], bb[1]->bb[2], ...), since it can have more than 2 BBs

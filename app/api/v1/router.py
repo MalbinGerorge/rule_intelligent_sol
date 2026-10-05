@@ -1,5 +1,5 @@
 """Aggregates every endpoint module's router into one. main.py imports
-only from here — it never reaches into app/api/endpoint/* directly, so
+only from here — it never reaches into app/api/v1/routes/* directly, so
 adding a new resource (offenses, mitre, etc.) means touching this file
 and the new endpoint module, not main.py."""
 
