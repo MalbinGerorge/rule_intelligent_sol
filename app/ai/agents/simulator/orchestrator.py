@@ -17,7 +17,7 @@ import time
 import structlog
 
 from app.ai.agents.simulator.attack_interpreter import AttackInterpreterAgent
-from app.ai.agents.simulator.dsm_property_extractor_trial import DSMPropertyExtractor
+from app.ai.agents.simulator.dsm_property_extractor import DSMPropertyExtractor
 from app.ai.agents.simulator.mitre_validator import MitreTechniqueValidator
 from app.ai.agents.simulator.reference_log_retriever import ReferenceLogRetriever
 from app.ai.agents.simulator.schemas import AttackStep, PipelineResult, StepResult
