@@ -97,9 +97,8 @@ def run_and_store_investigation(
             )
 
 
-from app.celery_app import (
-    celery_app,  # noqa: E402 -- placed here to avoid a circular import at module load time
-)
+# Imported here rather than at the top to avoid a circular import at module load time.
+from app.celery_app import celery_app  # noqa: E402
 from app.db.session import engine as _shared_engine  # noqa: E402
 
 
