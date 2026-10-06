@@ -78,7 +78,72 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_table("custom_event_property_expressions")
-    # NOTE: the original custom_event_properties table is NOT
-    # recreated here -- this migration is a one-way structural
-    # simplification. Re-run a fresh sync after downgrading if the
-    # old two-table shape is genuinely needed again.
+
+    # Recreate the two tables exactly as they were at the previous revision
+    # (created in 0019, is_builtin_field added in 0020), so a downgraded
+    # database is a valid 0031 database that can be upgraded again. They
+    # come back EMPTY: the merged rows can't be split back losslessly --
+    # re-run the custom property sync after downgrading.
+    op.create_table(
+        "custom_event_properties",
+        sa.Column("id", sa.Integer(), primary_key=True),
+        sa.Column(
+            "customer_id",
+            sa.Integer(),
+            sa.ForeignKey("customers.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
+        sa.Column("qradar_identifier", sa.Text(), nullable=False),
+        sa.Column("name", sa.Text(), nullable=False),
+        sa.Column("description", sa.Text(), nullable=True),
+        sa.Column("property_type", sa.Text(), nullable=True),
+        sa.Column("use_for_rule_engine", sa.Boolean(), nullable=True),
+        sa.Column("datetime_format", sa.Text(), nullable=True),
+        sa.Column("locale", sa.Text(), nullable=True),
+        sa.Column("auto_discovered", sa.Boolean(), nullable=True),
+        sa.Column("username", sa.Text(), nullable=True),
+        sa.Column(
+            "synced_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column("is_builtin_field", sa.Boolean(), nullable=False, server_default=sa.false()),
+        sa.UniqueConstraint(
+            "customer_id",
+            "qradar_identifier",
+            name="uq_custom_event_properties_customer_identifier",
+        ),
+    )
+    op.create_index(
+        "ix_custom_event_properties_customer_id", "custom_event_properties", ["customer_id"]
+    )
+
+    op.create_table(
+        "custom_event_property_expressions",
+        sa.Column("id", sa.Integer(), primary_key=True),
+        sa.Column(
+            "property_id",
+            sa.Integer(),
+            sa.ForeignKey("custom_event_properties.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
+        sa.Column("qradar_identifier", sa.Text(), nullable=False),
+        sa.Column("expression_type", sa.Text(), nullable=False),
+        sa.Column("enabled", sa.Boolean(), nullable=True),
+        sa.Column("log_source_type_id", sa.Integer(), nullable=True),
+        sa.Column("log_source_id", sa.Integer(), nullable=True),
+        sa.Column("qid", sa.Integer(), nullable=True),
+        sa.Column("low_level_category_id", sa.Integer(), nullable=True),
+        sa.Column("type_specific_data", sa.dialects.postgresql.JSONB(), nullable=True),
+        sa.Column(
+            "synced_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+    )
+    op.create_index(
+        "ix_custom_event_property_expressions_property_id",
+        "custom_event_property_expressions",
+        ["property_id"],
+    )
+    op.create_index(
+        "ix_custom_event_property_expressions_log_source_type_id",
+        "custom_event_property_expressions",
+        ["log_source_type_id"],
+    )
