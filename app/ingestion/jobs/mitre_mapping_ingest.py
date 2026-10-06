@@ -4,19 +4,39 @@ Ingests MITRE coverage results into mitre_mappings.
 Input is the list saved by test_pull_data.py:
     [{"identifier": "SYSTEM-1443", "mitre_coverage": {<rule_name>: {...}}}, ...]
 
-Flattens the nested {rule_name: {mapping: {tactic_id: {techniques: {...}}}}}
-shape into one row per (rule, tactic, technique) — a tactic with an empty
-techniques dict still gets one row (technique_id = '', a real comparable
-value rather than NULL, so the unique constraint / ON CONFLICT dedup
-actually works on re-ingestion).
+Flattens the nested {rule_name: {mapping: {<tactic key>: {techniques: {...}}}}}
+shape into one row per (rule, tactic, technique). A tactic with no techniques
+still gets one row, with technique_id/technique_name NULL; the unique
+constraint is NULLS NOT DISTINCT, so re-ingestion still dedupes those rows.
+
+QRadar consoles send the tactic in one of two shapes (both seen in real data):
+    {"TA0002": {"name": "Execution", ...}}      key = tactic ID
+    {"Execution": {"id": "TA0002", ...}}        key = tactic name
+parse_mitre_coverage normalizes both to tactic_id = "TA0002", tactic = "Execution".
 """
 
 from __future__ import annotations
 
 import json
+import re
 
+import structlog
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+
+logger = structlog.get_logger(__name__)
+
+
+TACTIC_ID = re.compile(r"^TA\d{4}$")
+
+
+def _tactic(key: str, info: dict) -> tuple[str | None, str | None]:
+    """(tactic_id, tactic_name) from either QRadar shape; tactic_id is None
+    if neither the key nor the payload holds a valid TA#### ID."""
+    if TACTIC_ID.match(key):
+        return key, info.get("name") or None
+    tactic_id = info.get("id")
+    return (tactic_id if tactic_id and TACTIC_ID.match(tactic_id) else None), key
 
 
 def parse_mitre_coverage(raw: dict) -> list[dict]:
@@ -26,16 +46,20 @@ def parse_mitre_coverage(raw: dict) -> list[dict]:
         mapping = rule_data.get("mapping", {})
         if not mapping:
             continue  # no coverage at all for this rule — no rows, which is correct
-        for tactic_id, tactic_info in mapping.items():
+        for key, tactic_info in mapping.items():
+            tactic_id, tactic_name = _tactic(key, tactic_info)
+            if tactic_id is None:
+                logger.warning("mitre_tactic_without_id_skipped", tactic_key=key)
+                continue
             techniques = tactic_info.get("techniques", {})
             if not techniques:
-                # tactic applies, but no specific technique — one row, technique_id = ''
+                # tactic applies, but no specific technique
                 rows.append(
                     {
                         "tactic_id": tactic_id,
-                        "tactic": tactic_info.get("name", ""),
-                        "technique_id": "",
-                        "technique_name": "",
+                        "tactic": tactic_name,
+                        "technique_id": None,
+                        "technique_name": None,
                     }
                 )
             else:
@@ -43,9 +67,9 @@ def parse_mitre_coverage(raw: dict) -> list[dict]:
                     rows.append(
                         {
                             "tactic_id": tactic_id,
-                            "tactic": tactic_info.get("name", ""),
-                            "technique_id": tech_info.get("id", ""),
-                            "technique_name": tech_name,
+                            "tactic": tactic_name,
+                            "technique_id": tech_info.get("id") or None,
+                            "technique_name": tech_name or None,
                         }
                     )
     return rows

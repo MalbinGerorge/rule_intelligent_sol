@@ -16,17 +16,19 @@ class MitreMapping(Base):
 
     One row per (rule, tactic, technique) — a tactic with no specific
     technique (e.g. "Credential Access" with an empty techniques dict)
-    still gets a row, with technique_id/technique_name as '' rather than
-    NULL. This is deliberate: Postgres treats NULL as distinct from NULL
-    in unique constraints, which would let ON CONFLICT silently fail to
-    dedupe tactic-only rows on repeated ingestion runs. Empty string is
-    a real, comparable value, so the constraint (and re-run dedup) works.
+    still gets a row, with technique_id/technique_name NULL. The unique
+    constraint is NULLS NOT DISTINCT (Postgres 15+), so ON CONFLICT still
+    dedupes those tactic-only rows on repeated ingestion runs.
     """
 
     __tablename__ = "mitre_mappings"
     __table_args__ = (
         UniqueConstraint(
-            "rule_id", "tactic_id", "technique_id", name="uq_mitre_mappings_rule_tactic_technique"
+            "rule_id",
+            "tactic_id",
+            "technique_id",
+            name="uq_mitre_mappings_rule_tactic_technique",
+            postgresql_nulls_not_distinct=True,
         ),
     )
 
@@ -39,7 +41,7 @@ class MitreMapping(Base):
     )
     tactic_id: Mapped[str] = mapped_column(Text, nullable=False, server_default="")  # e.g. TA0006
     tactic: Mapped[str | None] = mapped_column(Text)  # e.g. Credential Access
-    technique_id: Mapped[str] = mapped_column(Text, nullable=False, server_default="")  # e.g. T1030
+    technique_id: Mapped[str | None] = mapped_column(Text)  # e.g. T1030; NULL = tactic only
     technique_name: Mapped[str | None] = mapped_column(Text)  # e.g. Steal or Forge Kerberos Tickets
     raw_json: Mapped[dict | None] = mapped_column(JSONB)
     synced_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
