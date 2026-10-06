@@ -1,0 +1,164 @@
+%% Current database schema, generated from the live Postgres catalog (read-only).
+%% Legend: PK primary key, FK foreign key, UK part of a UNIQUE constraint.
+%% Comments: -> target ON DELETE rule; UNIQUE(...) composite unique; INDEX non-unique index;
+%%           NOT NULL; rls = row level security status (ON/OFF, number of policies).
+%% Solid line = foreign key enforced by the database. Dotted line = view dependency.
+%% Constraint totals: 21 PK, 21 FK, 12 UNIQUE, 0 CHECK; triggers 0; enums 0.
+erDiagram
+    building_blocks_reference {
+        integer id PK
+        integer customer_id FK, UK "-> customers.id ON DELETE CASCADE; UNIQUE(customer_id, qradar_rule_id); INDEX; NOT NULL"
+        bigint qradar_rule_id UK "UNIQUE(customer_id, qradar_rule_id); NOT NULL"
+        text identifier "INDEX"
+        rls OFF "row level security disabled; 0 policies"
+    }
+    custom_event_property_expressions {
+        integer id PK
+        integer customer_id FK "-> customers.id ON DELETE CASCADE; INDEX(customer_id, log_source_id); INDEX(customer_id, log_source_type_id); NOT NULL"
+        rls OFF "row level security disabled; 0 policies"
+    }
+    customer_credentials {
+        integer customer_id PK, FK "-> customers.id ON DELETE CASCADE"
+        rls OFF "row level security disabled; 0 policies"
+    }
+    customers {
+        integer id PK
+        text name UK "UNIQUE; NOT NULL"
+        rls OFF "row level security disabled; 0 policies"
+    }
+    embedding_jobs {
+        integer id PK
+        text status "INDEX; NOT NULL"
+        rls OFF "row level security disabled; 0 policies"
+    }
+    investigation_reports {
+        integer id PK
+        integer customer_id FK "-> customers.id ON DELETE CASCADE; INDEX; NOT NULL"
+        integer rule_id FK "-> rules.id ON DELETE CASCADE; INDEX; NOT NULL"
+        timestamptz created_at "INDEX; NOT NULL"
+        text status "INDEX; NOT NULL"
+        rls OFF "row level security disabled; 0 policies"
+    }
+    log_source_types_reference {
+        integer id PK
+        integer customer_id FK, UK "-> customers.id ON DELETE CASCADE; UNIQUE(customer_id, qradar_type_id); INDEX; NOT NULL"
+        bigint qradar_type_id UK "UNIQUE(customer_id, qradar_type_id); NOT NULL"
+        text name "INDEX"
+        rls OFF "row level security disabled; 0 policies"
+    }
+    log_sources_reference {
+        integer id PK
+        integer customer_id FK, UK "-> customers.id ON DELETE CASCADE; UNIQUE(customer_id, qradar_log_source_id); INDEX; NOT NULL"
+        bigint qradar_log_source_id UK "UNIQUE(customer_id, qradar_log_source_id); NOT NULL"
+        bigint type_id "INDEX"
+        rls OFF "row level security disabled; 0 policies"
+    }
+    mitre_mappings {
+        integer id PK
+        integer customer_id FK "-> customers.id ON DELETE CASCADE; INDEX; NOT NULL"
+        integer rule_id FK, UK "-> rules.id ON DELETE CASCADE; UNIQUE(rule_id, tactic_id, technique_id); INDEX"
+        text technique_id UK "UNIQUE(rule_id, tactic_id, technique_id); NOT NULL"
+        text tactic_id UK "UNIQUE(rule_id, tactic_id, technique_id); NOT NULL"
+        rls OFF "row level security disabled; 0 policies"
+    }
+    mitre_technique_catalog {
+        integer id PK
+        text technique_id UK "UNIQUE; INDEX; NOT NULL"
+        rls OFF "row level security disabled; 0 policies"
+    }
+    rule_building_blocks {
+        integer id PK
+        integer rule_id FK "-> rules.id ON DELETE CASCADE; INDEX; NOT NULL"
+        text bb_id "INDEX; NOT NULL"
+        rls OFF "row level security disabled; 0 policies"
+    }
+    rule_conditions {
+        integer id PK
+        integer rule_id FK "-> rules.id ON DELETE CASCADE; INDEX; NOT NULL"
+        rls OFF "row level security disabled; 0 policies"
+    }
+    rule_mitre_unified {
+        integer customer_id "INDEX; NOT NULL"
+        text technique_id "INDEX"
+        rls OFF "row level security disabled; 0 policies"
+    }
+    rule_offense_contributions {
+        integer id PK
+        integer rule_id FK "-> rules.id ON DELETE CASCADE; INDEX; NOT NULL"
+        bigint qradar_contribution_id UK "UNIQUE(customer_id, qradar_contribution_id); NOT NULL"
+        integer customer_id FK, UK "-> customers.id ON DELETE CASCADE; UNIQUE(customer_id, qradar_contribution_id); INDEX; NOT NULL"
+        rls OFF "row level security disabled; 0 policies"
+    }
+    rule_responses {
+        integer id PK
+        integer rule_id FK, UK "-> rules.id ON DELETE CASCADE; UNIQUE; INDEX; NOT NULL"
+        rls OFF "row level security disabled; 0 policies"
+    }
+    rule_yaml_representations {
+        integer id PK
+        integer rule_id FK, UK "-> rules.id ON DELETE CASCADE; UNIQUE(rule_id, customer_id, role); INDEX; NOT NULL"
+        integer customer_id FK, UK "-> customers.id ON DELETE CASCADE; UNIQUE(rule_id, customer_id, role); INDEX; NOT NULL"
+        text sigma_id UK "UNIQUE; NOT NULL"
+        text role UK "UNIQUE(rule_id, customer_id, role); INDEX; NOT NULL"
+        rls OFF "row level security disabled; 0 policies"
+    }
+    rules {
+        integer id PK
+        integer customer_id FK, UK "-> customers.id ON DELETE CASCADE; UNIQUE(customer_id, qradar_rule_id); INDEX; NOT NULL"
+        bigint qradar_rule_id UK "UNIQUE(customer_id, qradar_rule_id); NOT NULL"
+        text identifier "INDEX"
+        rls OFF "row level security disabled; 0 policies"
+    }
+    rules_reference {
+        integer id PK
+        integer customer_id FK, UK "-> customers.id ON DELETE CASCADE; UNIQUE(customer_id, qradar_rule_id); INDEX; NOT NULL"
+        bigint qradar_rule_id UK "UNIQUE(customer_id, qradar_rule_id); NOT NULL"
+        text identifier "INDEX"
+        rls OFF "row level security disabled; 0 policies"
+    }
+    sigma_generation_jobs {
+        integer id PK
+        integer customer_id FK "-> customers.id ON DELETE CASCADE; INDEX; NOT NULL"
+        text status "INDEX; NOT NULL"
+        rls OFF "row level security disabled; 0 policies"
+    }
+    sync_runs {
+        integer id PK
+        integer customer_id FK "-> customers.id ON DELETE CASCADE; INDEX; NOT NULL"
+        rls OFF "row level security disabled; 0 policies"
+    }
+    validation_results {
+        integer id PK
+        integer customer_id FK "-> customers.id ON DELETE CASCADE; INDEX; NOT NULL"
+        text entity_type "INDEX; NOT NULL"
+        text entity_ref "INDEX; NOT NULL"
+        rls OFF "row level security disabled; 0 policies"
+    }
+    rule_summary {
+        view rule_summary "VIEW: reads mitre_mappings, rule_offense_contributions, rules, validation_results"
+    }
+    customers ||--o{ building_blocks_reference : "customer_id ON DELETE CASCADE"
+    customers ||--o{ custom_event_property_expressions : "customer_id ON DELETE CASCADE"
+    customers ||--|o customer_credentials : "customer_id ON DELETE CASCADE"
+    customers ||--o{ investigation_reports : "customer_id ON DELETE CASCADE"
+    rules ||--o{ investigation_reports : "rule_id ON DELETE CASCADE"
+    customers ||--o{ log_source_types_reference : "customer_id ON DELETE CASCADE"
+    customers ||--o{ log_sources_reference : "customer_id ON DELETE CASCADE"
+    customers ||--o{ mitre_mappings : "customer_id ON DELETE CASCADE"
+    rules |o--o{ mitre_mappings : "rule_id ON DELETE CASCADE"
+    rules ||--o{ rule_building_blocks : "rule_id ON DELETE CASCADE"
+    rules ||--o{ rule_conditions : "rule_id ON DELETE CASCADE"
+    customers ||--o{ rule_offense_contributions : "customer_id ON DELETE CASCADE"
+    rules ||--o{ rule_offense_contributions : "rule_id ON DELETE CASCADE"
+    rules ||--|o rule_responses : "rule_id ON DELETE CASCADE"
+    customers ||--o{ rule_yaml_representations : "customer_id ON DELETE CASCADE"
+    rules ||--o{ rule_yaml_representations : "rule_id ON DELETE CASCADE"
+    customers ||--o{ rules : "customer_id ON DELETE CASCADE"
+    customers ||--o{ rules_reference : "customer_id ON DELETE CASCADE"
+    customers ||--o{ sigma_generation_jobs : "customer_id ON DELETE CASCADE"
+    customers ||--o{ sync_runs : "customer_id ON DELETE CASCADE"
+    customers ||--o{ validation_results : "customer_id ON DELETE CASCADE"
+    mitre_mappings ||..o{ rule_summary : "view reads"
+    rule_offense_contributions ||..o{ rule_summary : "view reads"
+    rules ||..o{ rule_summary : "view reads"
+    validation_results ||..o{ rule_summary : "view reads"
