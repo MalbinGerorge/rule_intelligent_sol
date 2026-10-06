@@ -14,9 +14,10 @@ Steps:
   1. Pick the range: from the copy's current revision to head; if nothing
      is pending, from --steps revisions below head.
   2. On the copy: [downgrade to start] -> upgrade -> downgrade -> upgrade.
-  3. Fail if any step fails; if a downgrade or upgrade changes the copy's
-     schema differently from how it changes the reference; if the round trip
-     doesn't return to the same schema; or if the round trip loses rows.
+  3. Fail if any step fails; if a downgrade or upgrade doesn't end in the
+     schema it must (state before, minus what the migrations remove, plus
+     what they add on the reference); if the round trip doesn't return to
+     the same schema; or if the round trip loses rows.
      Row-count changes made by the migration itself are listed for the PR.
      Drift the copy already had before (objects created by hand, outside
      migrations) is reported as a note, so it doesn't fail every future run.
@@ -148,31 +149,6 @@ def expect_same(label: str, actual: set, expected: set) -> None:
         print(f"           ... {len(missing) + len(extra) - 16} more")
 
 
-def delta(before: set, after: set) -> tuple[frozenset, frozenset]:
-    """What a step changed: (facts added, facts removed)."""
-    return frozenset(after - before), frozenset(before - after)
-
-
-def expect_same_change(step: str, actual: tuple, expected: tuple) -> None:
-    (added, removed), (exp_added, exp_removed) = actual, expected
-    problems = [
-        *(f"should add, didn't:    {f}" for f in sorted(exp_added - added)),
-        *(f"added unexpectedly:    {f}" for f in sorted(added - exp_added)),
-        *(f"should remove, didn't: {f}" for f in sorted(exp_removed - removed)),
-        *(f"removed unexpectedly:  {f}" for f in sorted(removed - exp_removed)),
-    ]
-    label = f"{step}: changes the schema exactly as on a fresh database ({len(exp_added)} added, {len(exp_removed)} removed)"
-    if not problems:
-        print(f"   ok    {label}")
-        return
-    failures.append(f"{step} differs from the reference")
-    print(f"   FAIL  {label}")
-    for p in problems[:12]:
-        print(f"           {p[:150]}")
-    if len(problems) > 12:
-        print(f"           ... {len(problems) - 12} more")
-
-
 def count_changes(before: dict, after: dict) -> list[str]:
     return [
         f"{t}: {before.get(t, '-')} -> {after.get(t, '-')}"
@@ -221,26 +197,37 @@ def main() -> None:
     ref_head, _ = snapshot(REF_DB)
 
     # The copy may already differ from what migrations build (objects added
-    # by hand). That pre-existing drift is reported, not failed: the checks
-    # compare what each migration step CHANGES on the copy with what it
-    # changes on the reference.
-    ref_up = delta(ref_start, ref_head)
-    ref_down = delta(ref_head, ref_start)
+    # by hand). That pre-existing drift is reported, not failed. Each step is
+    # checked by the state it must END in, derived from what the migrations
+    # add/remove on the reference:
+    #   after upgrade   = (before - removed) | added
+    #   after downgrade = (before - added)   | removed
+    # This also accepts migrations that create objects only if missing
+    # (no change on a database that already has them).
+    added, removed = ref_head - ref_start, ref_start - ref_head
 
     print(f"3. CYCLE on {COPY_DB}")
     initial, initial_counts = snapshot(COPY_DB)
     if current == head:
         alembic(COPY_DB, "downgrade", start)
         down1, counts_down1 = snapshot(COPY_DB)
-        expect_same_change(f"downgrade to {start}", delta(initial, down1), ref_down)
+        expect_same(
+            f"downgrade to {start}: ends in the expected schema", down1, (initial - added) | removed
+        )
     else:
         down1, counts_down1 = initial, initial_counts
     alembic(COPY_DB, "upgrade", head)
     up1, counts_up1 = snapshot(COPY_DB)
-    expect_same_change(f"upgrade to {head}", delta(down1, up1), ref_up)
+    expect_same(
+        f"upgrade to {head}: ends in the expected schema ({len(added)} added, {len(removed)} removed on a fresh database)",
+        up1,
+        (down1 - removed) | added,
+    )
     alembic(COPY_DB, "downgrade", start)
     down2, _ = snapshot(COPY_DB)
-    expect_same("second downgrade returns to the same schema", down2, down1)
+    expect_same(
+        f"downgrade to {start} again: ends in the expected schema", down2, (up1 - added) | removed
+    )
     alembic(COPY_DB, "upgrade", head)
     up2, counts_up2 = snapshot(COPY_DB)
     expect_same("second upgrade returns to the same schema", up2, up1)
