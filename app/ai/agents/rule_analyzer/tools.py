@@ -599,35 +599,29 @@ def check_field_extraction_configured(
     if not matched_ids:
         return f"Required log source type name(s) {required_type_names} not found in QRadar's live type list."
 
-    prop_row = (
+    # One row per expression, with the property name denormalized onto it
+    # (migration 0032 merged properties and expressions into this table).
+    # AQL expressions on QRadar built-in fields store the name quoted, e.g.
+    # '"Target Username"', so both spellings are accepted.
+    expr_rows = (
         db.execute(
             text(
-                "SELECT id FROM custom_event_properties WHERE customer_id = :customer_id AND name = :name"
+                "SELECT expression_type, enabled, log_source_type_id "
+                "FROM custom_event_property_expressions "
+                "WHERE customer_id = :customer_id AND property_name IN (:name, :quoted_name)"
             ),
-            {"customer_id": customer_id, "name": field_name},
+            {"customer_id": customer_id, "name": field_name, "quoted_name": f'"{field_name}"'},
         )
         .mappings()
-        .first()
+        .all()
     )
 
-    if prop_row is None:
+    if not expr_rows:
         return (
             f'No custom property named "{field_name}" found in the synced property list for this '
             "customer -- either it doesn't exist, or the property sync hasn't run/hasn't captured it. "
             "This alone would explain the field always being empty."
         )
-
-    expr_rows = (
-        db.execute(
-            text(
-                "SELECT expression_type, enabled, log_source_type_id "
-                "FROM custom_event_property_expressions WHERE property_id = :property_id"
-            ),
-            {"property_id": prop_row["id"]},
-        )
-        .mappings()
-        .all()
-    )
 
     applicable = [
         e
