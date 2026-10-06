@@ -1,0 +1,190 @@
+%% TARGET database schema (design, not yet implemented). See docs/database/design.md.
+%% Postgres schemas are shown as name prefixes: tenancy_, catalog_, qradar_, analysis_, ops_
+%%   (Mermaid entity names can't contain dots; in SQL these are tenancy.customers, qradar.rules, ...).
+%% Legend: PK primary key, FK foreign key, UK part of a UNIQUE constraint.
+%% Every tenant table: customer_id NOT NULL (row level security deferred to a later phase).
+%% Composite FKs (customer_id, rule_id) -> qradar.rules (customer_id, id) make cross-customer links impossible.
+%% ON DELETE: RESTRICT unless stated. CASCADE only inside an aggregate (a rule and its own parts).
+erDiagram
+    tenancy_customers {
+        bigint id PK
+        text name UK "UNIQUE; CHECK not blank"
+        text qradar_host "NOT NULL; CHECK not blank"
+        boolean verify_ssl "NOT NULL; default false"
+        timestamptz deactivated_at "NULL = active"
+        timestamptz created_at "NOT NULL"
+        timestamptz updated_at "NOT NULL"
+    }
+    tenancy_customer_credentials {
+        bigint customer_id PK, FK "-> customers ON DELETE CASCADE"
+        bytea token_encrypted "NOT NULL (pgcrypto)"
+        timestamptz rotated_at "NOT NULL"
+    }
+    catalog_mitre_tactics {
+        text tactic_id PK "CHECK ^TA[0-9]{4}$"
+        text name UK "UNIQUE; NOT NULL"
+    }
+    catalog_mitre_techniques {
+        text technique_id PK "CHECK ^T[0-9]{4}(\.[0-9]{3})?$"
+        text name "NOT NULL"
+        text parent_technique_id FK "-> mitre_techniques; CHECK set iff sub-technique"
+        text status "CHECK active | deprecated | revoked"
+        timestamptz synced_at "NOT NULL"
+    }
+    catalog_mitre_technique_tactics {
+        text technique_id PK, FK "-> mitre_techniques CASCADE"
+        text tactic_id PK, FK "-> mitre_tactics"
+    }
+    qradar_rules {
+        bigint id PK
+        bigint customer_id FK, UK "-> customers; UNIQUE(customer_id, qradar_rule_id); UNIQUE(customer_id, identifier); UNIQUE(customer_id, id)"
+        bigint qradar_rule_id UK "NOT NULL"
+        text identifier UK "NOT NULL"
+        text object_type "CHECK RULE | BUILDING_BLOCK"
+        text name "NOT NULL; trigram index for search"
+        boolean enabled "NOT NULL"
+        boolean needs_reparse "NOT NULL"
+        jsonb raw_json "NOT NULL; original QRadar payload"
+        timestamptz first_seen_at "NOT NULL"
+        timestamptz last_seen_at "NOT NULL; set by every sync"
+        timestamptz deleted_in_qradar_at "NULL = still in QRadar; CHECK >= first_seen_at"
+    }
+    qradar_rule_dependencies {
+        bigint rule_id PK, FK "-> rules(customer_id, id) CASCADE"
+        text building_block_identifier PK "NOT NULL; always kept"
+        bigint customer_id FK "NOT NULL"
+        bigint building_block_id FK "NULL = unresolved; -> rules ON DELETE SET NULL; CHECK <> rule_id"
+    }
+    qradar_rule_conditions {
+        bigint id PK
+        bigint rule_id FK, UK "-> rules(customer_id, id) CASCADE; UNIQUE(rule_id, sequence_order)"
+        bigint customer_id FK "NOT NULL"
+        integer sequence_order UK "CHECK >= 0"
+        text test_class "NOT NULL"
+        boolean negated "NOT NULL"
+        jsonb structured_data "NOT NULL; CHECK object"
+    }
+    qradar_rule_responses {
+        bigint rule_id PK, FK "-> rules(customer_id, id) CASCADE; one per rule"
+        bigint customer_id FK "NOT NULL"
+        integer severity "CHECK 0-10"
+        integer credibility "CHECK 0-10"
+        integer relevance "CHECK 0-10"
+        integer limiter_response_count "CHECK >= 0"
+    }
+    qradar_rule_mitre_mappings {
+        bigint id PK
+        bigint rule_id FK, UK "-> rules(customer_id, id) CASCADE; UNIQUE NULLS NOT DISTINCT(rule_id, tactic_id, technique_id)"
+        bigint customer_id FK "NOT NULL"
+        text tactic_id FK, UK "-> mitre_tactics; NOT NULL"
+        text technique_id FK, UK "-> mitre_techniques; NULL = tactic only"
+    }
+    qradar_offense_contributions {
+        bigint id PK
+        bigint customer_id FK, UK "UNIQUE(customer_id, qradar_contribution_id)"
+        bigint rule_id FK "-> rules(customer_id, id) RESTRICT; history is kept"
+        bigint qradar_contribution_id UK "NOT NULL"
+        integer event_count "CHECK >= 0"
+        timestamptz first_event_at "CHECK <= last_event_at"
+        timestamptz last_event_at "INDEX(customer_id, rule_id, last_event_at)"
+    }
+    qradar_log_source_types {
+        bigint id PK
+        bigint customer_id FK, UK "UNIQUE(customer_id, qradar_type_id)"
+        bigint qradar_type_id UK "NOT NULL"
+        text name "NOT NULL"
+    }
+    qradar_log_sources {
+        bigint id PK
+        bigint customer_id FK, UK "UNIQUE(customer_id, qradar_log_source_id)"
+        bigint qradar_log_source_id UK "NOT NULL"
+        bigint qradar_type_id "QRadar value, always kept"
+        bigint log_source_type_id FK "NULL = unresolved; -> log_source_types SET NULL"
+        float8 average_eps "CHECK >= 0"
+    }
+    qradar_event_property_expressions {
+        bigint id PK
+        bigint customer_id FK "NOT NULL"
+        text expression_type "CHECK regex | json | aql | leef | cef"
+        bigint qradar_log_source_id "NULL = any (QRadar -1)"
+        bigint log_source_id FK "NULL = any or unresolved; -> log_sources SET NULL"
+        bigint qradar_log_source_type_id "NULL = any (QRadar -1)"
+        bigint log_source_type_id FK "-> log_source_types SET NULL"
+        integer capture_group "CHECK >= 0"
+    }
+    analysis_sigma_rules {
+        bigint id PK
+        bigint customer_id FK, UK "UNIQUE(customer_id, rule_id, role)"
+        bigint rule_id FK, UK "-> rules(customer_id, id) RESTRICT"
+        uuid sigma_id UK "UNIQUE; NOT NULL"
+        text role UK "CHECK standalone | base | correlation"
+        text status "CHECK stable | test | experimental | deprecated | unsupported"
+        text level "CHECK informational | low | medium | high | critical"
+        jsonb detection "NOT NULL; CHECK object"
+        jsonb correlation "CHECK present iff role = correlation"
+        vector_1024 embedding "HNSW index (cosine); CHECK set iff embedded_at set"
+        text embedding_model "CHECK set iff embedding set"
+        timestamptz embedded_at
+    }
+    analysis_inferred_rule_techniques {
+        bigint sigma_rule_id PK, FK "-> sigma_rules CASCADE"
+        text technique_id PK, FK "-> mitre_techniques"
+        bigint customer_id FK "NOT NULL"
+        text confidence "CHECK low | medium | high"
+    }
+    analysis_investigations {
+        bigint id PK
+        bigint job_id FK, UK "-> ops.jobs; UNIQUE"
+        bigint customer_id FK "NOT NULL"
+        bigint rule_id FK "-> rules(customer_id, id) RESTRICT"
+        jsonb chain_analysis
+        jsonb final_report
+        integer tool_calls_made "CHECK >= 0"
+    }
+    ops_jobs {
+        bigint id PK
+        bigint customer_id FK "NULL only for global job types"
+        text job_type "CHECK investigation | sigma_generation | embedding | qradar_sync"
+        text status "CHECK queued | running | completed | failed | cancelled"
+        jsonb params "NOT NULL; CHECK object"
+        integer total_items "CHECK processed + failed <= total"
+        text error "CHECK required when failed"
+        timestamptz heartbeat_at "stale running jobs are failed by a reaper"
+        timestamptz finished_at "CHECK set iff completed | failed | cancelled"
+    }
+    VIEW_qradar_rule_summary {
+        bigint id "VIEW: rules + offense contributions + MITRE mappings"
+    }
+    VIEW_analysis_rule_techniques {
+        text source "VIEW: confirmed (QRadar) UNION inferred (LLM); never stale"
+    }
+
+    tenancy_customers ||--|o tenancy_customer_credentials : "owns"
+    tenancy_customers ||--o{ qradar_rules : "customer_id"
+    tenancy_customers ||--o{ qradar_log_source_types : "customer_id"
+    tenancy_customers ||--o{ qradar_log_sources : "customer_id"
+    tenancy_customers ||--o{ qradar_event_property_expressions : "customer_id"
+    tenancy_customers ||--o{ qradar_offense_contributions : "customer_id"
+    tenancy_customers |o--o{ ops_jobs : "customer_id (NULL = global)"
+    qradar_rules ||--o{ qradar_rule_dependencies : "depends on (CASCADE)"
+    qradar_rules |o--o{ qradar_rule_dependencies : "building block (SET NULL)"
+    qradar_rules ||--o{ qradar_rule_conditions : "CASCADE"
+    qradar_rules ||--|o qradar_rule_responses : "CASCADE"
+    qradar_rules ||--o{ qradar_rule_mitre_mappings : "CASCADE"
+    qradar_rules ||--o{ qradar_offense_contributions : "RESTRICT"
+    qradar_rules ||--o{ analysis_sigma_rules : "RESTRICT"
+    qradar_rules ||--o{ analysis_investigations : "RESTRICT"
+    qradar_log_source_types |o--o{ qradar_log_sources : "SET NULL"
+    qradar_log_sources |o--o{ qradar_event_property_expressions : "SET NULL"
+    qradar_log_source_types |o--o{ qradar_event_property_expressions : "SET NULL"
+    catalog_mitre_tactics ||--o{ catalog_mitre_technique_tactics : "tactic"
+    catalog_mitre_techniques ||--o{ catalog_mitre_technique_tactics : "technique"
+    catalog_mitre_techniques |o--o{ catalog_mitre_techniques : "parent"
+    catalog_mitre_tactics ||--o{ qradar_rule_mitre_mappings : "tactic"
+    catalog_mitre_techniques |o--o{ qradar_rule_mitre_mappings : "technique"
+    catalog_mitre_techniques ||--o{ analysis_inferred_rule_techniques : "technique"
+    analysis_sigma_rules ||--o{ analysis_inferred_rule_techniques : "CASCADE"
+    ops_jobs ||--|o analysis_investigations : "result of"
+    qradar_rules ||..o{ VIEW_qradar_rule_summary : "view reads"
+    qradar_rule_mitre_mappings ||..o{ VIEW_analysis_rule_techniques : "view reads"
+    analysis_inferred_rule_techniques ||..o{ VIEW_analysis_rule_techniques : "view reads"
