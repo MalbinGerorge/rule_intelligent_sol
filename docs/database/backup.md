@@ -31,3 +31,17 @@ Stop the API and Celery worker while restoring, then restart them.
 ## The `_restore_check` database
 
 `rule_intelligent_sol_restore_check` is a complete copy of the data from the last verified backup. Phase 1b of the database redesign uses it to test every new migration (upgrade, downgrade, upgrade again) before it touches the real database. It's safe to drop at any time; the next backup run recreates it.
+
+## Test a migration before it touches the real database
+
+```powershell
+uv run python scripts/db_migration_check.py              # refresh the copy, test pending migrations
+uv run python scripts/db_migration_check.py --steps 2    # nothing pending: re-test the last 2
+```
+
+1. Refreshes `_restore_check` from the real database (backup + verified restore).
+2. Builds `<database>_migration_ref` from an empty database with migrations only: what the schema *should* look like.
+3. On the copy: (downgrade →) upgrade → downgrade → upgrade.
+4. Fails if a step fails, if a step changes the copy's schema differently from how it changes the reference, if the round trip doesn't return to the same schema, or if the round trip loses rows. Row-count changes made by the migration itself are listed.
+
+Drift the database already had (objects created outside migrations) is printed as a note instead of failing, so it doesn't block every future migration. Only after this passes is `alembic upgrade head` run against the real database.
