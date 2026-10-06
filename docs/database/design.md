@@ -179,7 +179,7 @@ Each phase is one or a few small PRs; each leaves a working system. Every PR tha
 | Phase | Content | Verification |
 |---|---|---|
 | **1. Safety net** | Backup/restore drill on dev data; `alembic check` in CI (drift can't come back); repository module for each table just before it changes | restore produces identical row counts |
-| **2. Integrity on today's tables** | Fix data (tactic names → IDs, `''` → NULL, `-1` → NULL, catalog sync); add missing PK/FKs, CHECKs, `RESTRICT` on customers; drop 2 redundant indexes; fix job status default | every constraint validated on real data |
+| **2. Integrity on today's tables** | Bring migrations in line with the real database (3 objects exist only there, see §8); fix migration 0032's downgrade; fix data (tactic names → IDs, `''` → NULL, `-1` → NULL, catalog sync); add missing PK/FKs, CHECKs, `RESTRICT` on customers; drop 2 redundant indexes; fix job status default | every constraint validated on real data |
 | **3. Consolidate** | `ops.jobs`; remove duplicate reference tables + validation job; MITRE view; `rule_dependencies` as a set | row counts / checksums old vs new |
 | **4. Tenant integrity** | `customer_id` everywhere, composite FKs, database roles | tests: a row can't reference another customer's rule; the app role can't run DDL |
 | **5. Namespaces + vectors** | Move tables into schemas; `vector(1024)` + HNSW; embeddings regenerated into pgvector; retire Chroma | similarity-search eval results comparable before/after |
@@ -190,4 +190,6 @@ Each phase is one or a few small PRs; each leaves a working system. Every PR tha
 - **Building blocks `38750177`–`38750184` (All Cargo):** referenced by 8 rule dependencies but absent from ingested rules; kept as unresolved references (D9) until investigated.
 - **TLS verification** stays off by default (`verify_ssl = false`), as agreed; revisit when customer consoles have CA bundles.
 - **Row level security** is deferred (D3); the design keeps `customer_id` on every tenant table so it can be added without schema changes.
+- **Objects created outside migrations** (found by `scripts/db_migration_check.py`): `UNIQUE (rule_id, customer_id, role)` and `UNIQUE (sigma_id)` on `rule_yaml_representations` (declared in the ORM model, never migrated) and the `pg_trgm` extension exist in the development database but not in a database built from migrations. A migration must create them if missing.
+- **Migration 0032's downgrade** drops `custom_event_property_expressions` without recreating the 0031 tables, so after a downgrade the database can't be upgraded again. It must recreate the old (empty) tables; their data is re-synced from QRadar.
 - **Embedding dimension:** 1024 per the Qwen3-Embedding-0.6B model card; confirmed against the loaded model before phase 5.
