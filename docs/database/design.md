@@ -190,6 +190,6 @@ Each phase is one or a few small PRs; each leaves a working system. Every PR tha
 - **Building blocks `38750177`–`38750184` (All Cargo):** referenced by 8 rule dependencies but absent from ingested rules; kept as unresolved references (D9) until investigated.
 - **TLS verification** stays off by default (`verify_ssl = false`), as agreed; revisit when customer consoles have CA bundles.
 - **Row level security** is deferred (D3); the design keeps `customer_id` on every tenant table so it can be added without schema changes.
-- **Objects created outside migrations** (found by `scripts/db_migration_check.py`): `UNIQUE (rule_id, customer_id, role)` and `UNIQUE (sigma_id)` on `rule_yaml_representations` (declared in the ORM model, never migrated) and the `pg_trgm` extension exist in the development database but not in a database built from migrations. A migration must create them if missing.
-- **Migration 0032's downgrade** drops `custom_event_property_expressions` without recreating the 0031 tables, so after a downgrade the database can't be upgraded again. It must recreate the old (empty) tables; their data is re-synced from QRadar.
+- ~~Objects created outside migrations~~ **Resolved in phase 2a** (migration 0033): `UNIQUE (rule_id, customer_id, role)` and `UNIQUE (sigma_id)` on `rule_yaml_representations` and the `pg_trgm` extension existed only in the development database; 0033 creates them if missing.
+- ~~Migration 0032's downgrade~~ **Resolved in phase 2a**: it now recreates the 0031 tables (empty), so a downgraded database can be upgraded again.
 - **Embedding dimension:** 1024 per the Qwen3-Embedding-0.6B model card; confirmed against the loaded model before phase 5.
