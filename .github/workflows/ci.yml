@@ -112,6 +112,12 @@ jobs:
       - name: API contract up to date
         run: uv run python scripts/export_openapi.py --check
 
+      # Models and migrations must not drift further apart: builds a fresh
+      # database from migrations and compares it with the ORM models against
+      # the known list in docs/database/schema_drift_baseline.txt.
+      - name: Schema drift (models vs migrations)
+        run: uv run python scripts/check_schema_drift.py
+
   security:
     name: Security (gitleaks, pip-audit)
     runs-on: ubuntu-latest
