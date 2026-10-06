@@ -27,7 +27,7 @@ The current schema (22 tables, 1 view) grew one feature at a time. Measured on t
 |---|---|---|
 | D1 | Deleting a customer is `RESTRICT`ed; customers are **deactivated** (`deactivated_at`), purging is an explicit, separate operation | No accidental mass deletion |
 | D2 | Rules removed in QRadar are **kept** and marked `deleted_in_qradar_at`; every sync sets `last_seen_at` | Investigations, Sigma output and offense history stay meaningful |
-| D3 | Row level security on every tenant table, enforced for the application's database role (phase 4) | Isolation doesn't depend on every query remembering `WHERE customer_id = …` |
+| D3 | Row level security is **deferred** to a later phase (after authentication). Until then isolation comes from `customer_id` on every tenant table and composite foreign keys (phase 4) | Enforced cross-customer integrity now; RLS added later without schema changes, because every tenant table already carries `customer_id` |
 | D4 | pgvector in Postgres replaces Chroma | One less service; vectors live with their rows; tenant filtering in SQL; removes 4 accepted Chroma CVEs |
 | D5 | Postgres schemas group tables by role: `tenancy`, `catalog`, `qradar`, `analysis`, `ops` | A table's purpose is visible in its name; permissions can be granted per schema |
 | D6 | Scale target: up to ~20 customers in 1–2 years | Composite keys + indexes are sufficient; no partitioning now |
@@ -72,7 +72,7 @@ The current schema (22 tables, 1 view) grew one feature at a time. Measured on t
 ### `tenancy` — who the customers are
 | Table | Notes |
 |---|---|
-| `customers` | `name UNIQUE`, `CHECK` not blank; `verify_ssl NOT NULL DEFAULT true` (all three current customers have `false` — TLS verification is a security follow-up); `deactivated_at` replaces `active` |
+| `customers` | `name UNIQUE`, `CHECK` not blank; `verify_ssl NOT NULL DEFAULT false` (unchanged; agreed to keep as is for now); `deactivated_at` replaces `active` |
 | `customer_credentials` | 1:1 with customer (`customer_id` PK), `token_encrypted bytea` (pgcrypto); the only `CASCADE` from customers — credentials are part of the customer |
 
 Authentication will add `users` and `customer_memberships` here later.
@@ -110,7 +110,7 @@ View `rule_summary`: same columns as today, rebuilt on the new tables, without t
 
 View `rule_techniques`: confirmed mappings `UNION ALL` inferred techniques with `source IN ('confirmed','inferred')` and `confidence`. Replaces `rule_mitre_unified`; always current.
 
-**Cross-customer reads by design.** Similarity search and gap analysis suggest *other* customers' de-identified Sigma rules. Under row level security (D3) this is expressed explicitly: a read-only view exposing only the de-identified Sigma columns, with its own policy — not by disabling RLS.
+**Cross-customer reads by design.** Similarity search and gap analysis suggest *other* customers' de-identified Sigma rules. When row level security is added (D3), this will be expressed explicitly: a read-only view exposing only the de-identified Sigma columns, with its own policy — not by disabling RLS.
 
 ### `ops` — background work
 `jobs` replaces `sigma_generation_jobs`, `embedding_jobs`, `sync_runs` and the status part of `investigation_reports`:
@@ -152,13 +152,15 @@ View `rule_techniques`: confirmed mappings `UNION ALL` inferred techniques with 
 | `sigma_generation_jobs`, `embedding_jobs`, `sync_runs` | `ops.jobs` | mapped by type; stuck `running` → `failed` |
 | `rules_reference`, `building_blocks_reference`, `validation_results`, `rule_mitre_unified` | removed | duplicates / empty / derived |
 
-## 6. Database roles and row level security (phase 4)
+## 6. Database roles (phase 4) and row level security (deferred)
 
 | Role | Can | Used by |
 |---|---|---|
 | `rule_intel_owner` | owns all objects; DDL | Alembic migrations only |
-| `rule_intel_app` | `SELECT/INSERT/UPDATE/DELETE` on tables, no DDL; subject to RLS | API and workers |
+| `rule_intel_app` | `SELECT/INSERT/UPDATE/DELETE` on tables, no DDL | API and workers |
 | `rule_intel_readonly` | `SELECT` | support / reporting |
+
+**Row level security, when it is added later:**
 
 - Policies on every tenant table: `customer_id = current_setting('app.customer_id')::bigint`, with `FORCE ROW LEVEL SECURITY`.
 - The application sets `app.customer_id` per transaction (`SET LOCAL`); a missing setting returns no rows instead of all rows.
@@ -166,19 +168,26 @@ View `rule_techniques`: confirmed mappings `UNION ALL` inferred techniques with 
 
 ## 7. Implementation phases
 
-Each phase is one or a few PRs; each leaves a working system.
+Each phase is one or a few small PRs; each leaves a working system. Every PR that changes the schema must pass, before merge:
+
+1. **Backup first** — a fresh dump of the development database exists and has been restored once.
+2. **Upgrade and downgrade** — `alembic upgrade head` and `alembic downgrade -1` both succeed on a copy of the real data, and upgrading again returns to the same schema.
+3. **Data preserved** — row counts (and, where data is transformed, checksums) match before and after, with any intended changes listed in the PR.
+4. **Behavior unchanged** — `pytest`, the API contract check (`export_openapi.py --check`), import contracts and CI all pass; endpoints that read the changed tables return the same results before and after.
+5. **No drift** — `alembic check` reports no new differences between models and database.
 
 | Phase | Content | Verification |
 |---|---|---|
 | **1. Safety net** | Backup/restore drill on dev data; `alembic check` in CI (drift can't come back); repository module for each table just before it changes | restore produces identical row counts |
 | **2. Integrity on today's tables** | Fix data (tactic names → IDs, `''` → NULL, `-1` → NULL, catalog sync); add missing PK/FKs, CHECKs, `RESTRICT` on customers; drop 2 redundant indexes; fix job status default | every constraint validated on real data |
 | **3. Consolidate** | `ops.jobs`; remove duplicate reference tables + validation job; MITRE view; `rule_dependencies` as a set | row counts / checksums old vs new |
-| **4. Tenant isolation** | `customer_id` everywhere, composite FKs, roles, RLS policies | tests: a query as customer A never sees B's rows; missing setting sees nothing |
+| **4. Tenant integrity** | `customer_id` everywhere, composite FKs, database roles | tests: a row can't reference another customer's rule; the app role can't run DDL |
 | **5. Namespaces + vectors** | Move tables into schemas; `vector(1024)` + HNSW; embeddings regenerated into pgvector; retire Chroma | similarity-search eval results comparable before/after |
 | **6. New baseline** | Squash 32 migrations into one baseline matching the final schema | fresh database from baseline == migrated database (schema diff empty) |
 
 ## 8. Open items
 
 - **Building blocks `38750177`–`38750184` (All Cargo):** referenced by 8 rule dependencies but absent from ingested rules; kept as unresolved references (D9) until investigated.
-- **TLS verification** is off for all customers (`verify_ssl = false`); the new default is `true`, existing customers need a CA bundle or an explicit decision.
+- **TLS verification** stays off by default (`verify_ssl = false`), as agreed; revisit when customer consoles have CA bundles.
+- **Row level security** is deferred (D3); the design keeps `customer_id` on every tenant table so it can be added without schema changes.
 - **Embedding dimension:** 1024 per the Qwen3-Embedding-0.6B model card; confirmed against the loaded model before phase 5.

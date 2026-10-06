@@ -2,7 +2,7 @@
 %% Postgres schemas are shown as name prefixes: tenancy_, catalog_, qradar_, analysis_, ops_
 %%   (Mermaid entity names can't contain dots; in SQL these are tenancy.customers, qradar.rules, ...).
 %% Legend: PK primary key, FK foreign key, UK part of a UNIQUE constraint.
-%% Every tenant table: customer_id NOT NULL, row level security ON (policy: customer_id = app.customer_id).
+%% Every tenant table: customer_id NOT NULL (row level security deferred to a later phase).
 %% Composite FKs (customer_id, rule_id) -> qradar.rules (customer_id, id) make cross-customer links impossible.
 %% ON DELETE: RESTRICT unless stated. CASCADE only inside an aggregate (a rule and its own parts).
 erDiagram
@@ -10,7 +10,7 @@ erDiagram
         bigint id PK
         text name UK "UNIQUE; CHECK not blank"
         text qradar_host "NOT NULL; CHECK not blank"
-        boolean verify_ssl "NOT NULL; default true"
+        boolean verify_ssl "NOT NULL; default false"
         timestamptz deactivated_at "NULL = active"
         timestamptz created_at "NOT NULL"
         timestamptz updated_at "NOT NULL"
