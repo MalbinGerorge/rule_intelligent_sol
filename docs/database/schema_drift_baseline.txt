@@ -11,8 +11,6 @@
 #   add_* / remove_* -> same, for columns, indexes, constraints, foreign keys
 #   modify_*         -> both exist but differ (type, nullability, default)
 
-add_constraint rule_yaml_representations.uq_rule_yaml_rule_customer_role(rule_id,customer_id,role)
-add_constraint rule_yaml_representations.uq_rule_yaml_sigma_id(sigma_id)
 add_index rule_mitre_unified.ix_rule_mitre_unified_customer_id(customer_id)
 add_index rule_mitre_unified.ix_rule_mitre_unified_rule_id(rule_id)
 add_index rule_mitre_unified.ix_rule_mitre_unified_technique_id(technique_id)
