@@ -49,7 +49,8 @@ class MitreTechniqueValidator:
         row = (
             self.db.execute(
                 text(
-                    "SELECT technique_id, technique_name FROM mitre_technique_catalog WHERE technique_id = :id"
+                    "SELECT technique_id, technique_name FROM mitre_technique_catalog"
+                    " WHERE technique_id = :id AND status = 'active'"
                 ),
                 {"id": technique_id},
             )
@@ -68,7 +69,7 @@ class MitreTechniqueValidator:
                 SELECT technique_id, technique_name,
                        similarity(technique_name, :name) AS sim
                 FROM mitre_technique_catalog
-                WHERE similarity(technique_name, :name) > 0.3
+                WHERE status = 'active' AND similarity(technique_name, :name) > 0.3
                 ORDER BY sim DESC
                 LIMIT 1
                 """

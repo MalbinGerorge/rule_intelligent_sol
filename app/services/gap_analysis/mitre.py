@@ -98,7 +98,8 @@ class MitreGapAnalyzer:
         rows = (
             self.db.execute(
                 text(
-                    "SELECT technique_id, technique_name, tactic_names, is_subtechnique FROM mitre_technique_catalog"
+                    "SELECT technique_id, technique_name, tactic_names, is_subtechnique"
+                    " FROM mitre_technique_catalog WHERE status = 'active'"
                 )
             )
             .mappings()
