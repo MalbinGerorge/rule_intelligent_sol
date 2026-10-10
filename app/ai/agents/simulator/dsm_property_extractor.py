@@ -44,7 +44,6 @@ logger = structlog.get_logger(__name__)
 _KEY_PATTERN = re.compile(r"^[A-Za-z_][\w\-\.]*$")
 # Column alias the retriever's AQL gives the raw payload ("UTF8(payload) AS Payload").
 PAYLOAD_KEY = "Payload"
-ANY = -1  # QRadar's "not scoped to a specific value" marker in scoping columns
 
 
 class DSMPropertyExtractor:
@@ -131,16 +130,18 @@ class DSMPropertyExtractor:
                 FROM custom_event_property_expressions
                 WHERE customer_id = :customer_id
                   AND COALESCE(enabled, TRUE) = TRUE
-                  AND (log_source_type_id = :type_id OR log_source_type_id = :any)
-                  AND (log_source_id = :source_id OR log_source_id = :any)
+                  -- NULL = applies to any type / any log source. When the
+                  -- caller passes None, "= NULL" matches nothing, so only
+                  -- the "any" expressions apply.
+                  AND (log_source_type_id = :type_id OR log_source_type_id IS NULL)
+                  AND (log_source_id = :source_id OR log_source_id IS NULL)
                 ORDER BY id
                 """
                 ),
                 {
                     "customer_id": self.customer_id,
-                    "type_id": log_source_type_id if log_source_type_id is not None else ANY,
-                    "source_id": log_source_id if log_source_id is not None else ANY,
-                    "any": ANY,
+                    "type_id": log_source_type_id,
+                    "source_id": log_source_id,
                 },
             )
             .mappings()

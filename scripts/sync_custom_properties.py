@@ -42,6 +42,7 @@ def main() -> None:
     print(f"Builtin fields discovered:       {result['builtin_properties_discovered']}")
     print(f"Expressions synced:              {result['expressions_synced']}")
     print(f"Expressions skipped (unexpected): {result['expressions_skipped_unexpected']}")
+    print(f"Expressions skipped (invalid payload): {result['expressions_skipped_invalid']}")
 
 
 if __name__ == "__main__":

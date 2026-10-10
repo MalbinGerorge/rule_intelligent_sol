@@ -8,16 +8,25 @@ refresh correctly handles QRadar-side deletions.
 
 Intended to run on a schedule (e.g. twice daily) via
 scripts/sync_custom_properties.py.
+
+Every expression is validated by QRadarPropertyExpression first: QRadar's
+"any" values (-1, and 0 for qid/category) become NULL, and a payload that
+doesn't validate is skipped and counted instead of being written.
 """
 
 from __future__ import annotations
 
 import json
 
+import structlog
+from pydantic import ValidationError
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.integrations.qradar.client import QRadarClient
+from app.integrations.qradar.models import QRadarPropertyExpression
+
+logger = structlog.get_logger(__name__)
 
 _EXPRESSION_FETCHERS = {
     "regex": "fetch_property_expressions",
@@ -36,7 +45,7 @@ def sync_custom_event_properties(
     """
     Returns:
         {"expressions_synced": int, "builtin_properties_discovered": int,
-         "expressions_skipped_unexpected": int}
+         "expressions_skipped_unexpected": int, "expressions_skipped_invalid": int}
     """
     property_pages = qradar_client.fetch_regex_properties()
     all_properties = []
@@ -54,13 +63,25 @@ def sync_custom_event_properties(
         for prop in all_properties
     }
 
-    all_expressions: list[tuple[str, dict]] = []
+    all_expressions: list[tuple[str, QRadarPropertyExpression]] = []
+    expressions_skipped_invalid = 0
     for exp_type, method_name in _EXPRESSION_FETCHERS.items():
         fetch_method = getattr(qradar_client, method_name)
         pages = fetch_method()
         for page in pages:
             for item in json.loads(page):
-                all_expressions.append((exp_type, item))
+                try:
+                    all_expressions.append(
+                        (exp_type, QRadarPropertyExpression.model_validate(item))
+                    )
+                except ValidationError as exc:
+                    expressions_skipped_invalid += 1
+                    logger.warning(
+                        "custom_property_expression_invalid",
+                        expression_type=exp_type,
+                        identifier=item.get("identifier"),
+                        errors=exc.errors(include_url=False),
+                    )
 
     db.execute(
         text("DELETE FROM custom_event_property_expressions WHERE customer_id = :c"),
@@ -72,7 +93,7 @@ def sync_custom_event_properties(
     builtin_discovered_identifiers: set[str] = set()
 
     for exp_type, expr in all_expressions:
-        parent_identifier = expr.get("regex_property_identifier")
+        parent_identifier = expr.regex_property_identifier
         known_property = property_by_identifier.get(parent_identifier)
 
         if known_property is None:
@@ -81,7 +102,7 @@ def sync_custom_event_properties(
                 # AQL expressions can reference QRadar's own BUILT-IN
                 # fields, never listed in regex_properties.
                 builtin_discovered_identifiers.add(parent_identifier)
-                property_name = expr.get("expression") or parent_identifier
+                property_name = expr.expression or parent_identifier
                 property_type = None
                 use_for_rule_engine = None
                 is_builtin = True
@@ -122,13 +143,13 @@ def sync_custom_event_properties(
                 "property_type": property_type,
                 "use_for_rule_engine": use_for_rule_engine,
                 "is_builtin_field": is_builtin,
-                "qradar_identifier": expr.get("identifier"),
+                "qradar_identifier": expr.identifier,
                 "expression_type": exp_type,
-                "enabled": expr.get("enabled"),
-                "log_source_type_id": expr.get("log_source_type_id"),
-                "log_source_id": expr.get("log_source_id"),
-                "qid": expr.get("qid"),
-                "low_level_category_id": expr.get("low_level_category_id"),
+                "enabled": expr.enabled,
+                "log_source_type_id": expr.log_source_type_id,
+                "log_source_id": expr.log_source_id,
+                "qid": expr.qid,
+                "low_level_category_id": expr.low_level_category_id,
                 **type_specific,
             },
         )
@@ -138,10 +159,11 @@ def sync_custom_event_properties(
         "expressions_synced": expressions_inserted,
         "builtin_properties_discovered": len(builtin_discovered_identifiers),
         "expressions_skipped_unexpected": expressions_skipped_unexpected,
+        "expressions_skipped_invalid": expressions_skipped_invalid,
     }
 
 
-def _flatten_type_specific(exp_type: str, expr: dict) -> dict:
+def _flatten_type_specific(exp_type: str, expr: QRadarPropertyExpression) -> dict:
     """Only regex and nvp carry extra fields beyond a single
     "expression" string -- everything else uses expression alone.
     Unused columns for a given type are explicitly None, not omitted,
@@ -155,13 +177,13 @@ def _flatten_type_specific(exp_type: str, expr: dict) -> dict:
         "delimiter_name_value": None,
     }
     if exp_type == "regex":
-        base["regex"] = expr.get("regex")
-        base["capture_group"] = expr.get("capture_group")
-        base["format_string"] = expr.get("format_string")
+        base["regex"] = expr.regex
+        base["capture_group"] = expr.capture_group
+        base["format_string"] = expr.format_string
     elif exp_type == "nvp":
-        base["expression"] = expr.get("expression")
-        base["delimiter_pair"] = expr.get("delimiter_pair")
-        base["delimiter_name_value"] = expr.get("delimiter_name_value")
+        base["expression"] = expr.expression
+        base["delimiter_pair"] = expr.delimiter_pair
+        base["delimiter_name_value"] = expr.delimiter_name_value
     else:
-        base["expression"] = expr.get("expression")
+        base["expression"] = expr.expression
     return base
