@@ -126,9 +126,30 @@ View `rule_techniques`: confirmed mappings `UNION ALL` inferred techniques with 
 | `error` | required when `status = 'failed'` |
 | `created_at`, `started_at`, `finished_at`, `heartbeat_at` | ordered (`CHECK`); `finished_at` set iff status is terminal |
 | `celery_task_id` | for tracing a job to its worker |
+| `attempts` | `>= 0`; how many times the task has run (retries included) |
 
 - **Stuck jobs:** workers update `heartbeat_at`; a scheduled reaper marks `running` jobs with an old heartbeat `failed`. This covers the case the code's try/except can't: a worker that crashes or is killed.
 - **No duplicate runs:** partial unique indexes allow only one active job per customer for `sigma_generation` and `qradar_sync`, and one active investigation per rule.
+
+#### Worker reliability (phase 3, built with `ops.jobs`)
+
+Today a job is saved as `running` *before* its task reaches Redis, retries don't exist, and a worker that dies leaves the job `running` forever (two embedding jobs have been stuck since 2026-09-10). The target behavior:
+
+| Concern | Design |
+|---|---|
+| **Starting a job** | The API saves the job as `queued`, then enqueues it; the worker sets `running` + `started_at` when it actually starts. If enqueueing fails, the API marks the job `failed` immediately — a `queued` job is never orphaned silently. |
+| **Retries** | Only for *temporary* errors (Azure OpenAI 429/timeouts, QRadar unreachable, vector store restarting): exponential backoff with jitter, a maximum number of attempts, `attempts` recorded. *Permanent* errors (invalid data, missing rule, bugs) fail at once. After the last attempt the job is `failed` with the last error. |
+| **Idempotency and resume** | Every task is safe to run twice (upserts, unique constraints). Batch jobs record per-item progress, so a retry continues where the previous attempt stopped instead of starting over. |
+| **Long batches** | Sigma generation and embedding batches are split into small chunks (e.g. 50 rules per task): each chunk is short, retried on its own, and fits per-task time limits. |
+| **Time limits** | Per task type: short for investigations, sized for one chunk for batches. A *soft* limit lets the task mark its job failed before the *hard* limit kills it. |
+| **Worker death** | `acks_late` + `reject_on_worker_lost`: a task is removed from Redis only after it finishes, so another worker picks it up if one dies. The Redis `visibility_timeout` must exceed the longest chunk, or Redis hands a still-running task to a second worker. |
+| **Stuck jobs** | Workers update `heartbeat_at` every ~30 s; a Celery beat task (the logic of `app/services/stale_jobs.py`) marks `running` jobs without a heartbeat for ~5 minutes `failed` and logs `job_marked_stale` for alerting. |
+| **Queues and limits** | Separate `llm` and `ingestion` queues (ADR 0001); rate limits per task type matching the Azure quota; `prefetch_multiplier = 1` for long tasks; `ignore_result = True` (status lives in Postgres, not Redis). |
+| **Enqueue payload** | Tasks receive a `job_id`, not the data: the worker reads its items from Postgres (today the full list of ~1,400 Sigma rules travels through Redis). |
+| **Cancellation** | `cancelled` status; the API revokes the Celery task. |
+| **Visibility** | Every log line of a task carries `job_id`; Flower shows workers and queues; failed and stale jobs raise alerts. |
+
+Verified by tests that kill a worker mid-batch and check that the job is resumed or failed, never left `running`.
 
 ### Removed
 `rules_reference`, `building_blocks_reference`, `validation_results` (and the validation job that writes them), `rule_mitre_unified` (→ view), `sigma_generation_jobs`, `embedding_jobs`, `sync_runs` (→ `ops.jobs`), and the Chroma service.
@@ -180,7 +201,7 @@ Each phase is one or a few small PRs; each leaves a working system. Every PR tha
 |---|---|---|
 | **1. Safety net** | Backup/restore drill on dev data; `alembic check` in CI (drift can't come back); repository module for each table just before it changes | restore produces identical row counts |
 | **2. Integrity on today's tables** | Bring migrations in line with the real database (3 objects exist only there, see §8); fix migration 0032's downgrade; fix data (tactic names → IDs, `''` → NULL, `-1` → NULL, catalog sync); add missing PK/FKs, CHECKs, `RESTRICT` on customers; drop 2 redundant indexes; fix job status default | every constraint validated on real data |
-| **3. Consolidate** | `ops.jobs`; remove duplicate reference tables + validation job; MITRE view; `rule_dependencies` as a set | row counts / checksums old vs new |
+| **3. Consolidate** | `ops.jobs` with worker reliability (§4 `ops`: queued status, retries, chunked batches, heartbeats, scheduled stale-job cleanup); remove duplicate reference tables + validation job; MITRE view; `rule_dependencies` as a set | row counts / checksums old vs new; worker-kill tests |
 | **4. Tenant integrity** | `customer_id` everywhere, composite FKs, database roles | tests: a row can't reference another customer's rule; the app role can't run DDL |
 | **5. Namespaces + vectors** | Move tables into schemas; `vector(1024)` + HNSW; embeddings regenerated into pgvector; retire Chroma | similarity-search eval results comparable before/after |
 | **6. New baseline** | Squash 32 migrations into one baseline matching the final schema | fresh database from baseline == migrated database (schema diff empty) |
@@ -192,4 +213,5 @@ Each phase is one or a few small PRs; each leaves a working system. Every PR tha
 - **Row level security** is deferred (D3); the design keeps `customer_id` on every tenant table so it can be added without schema changes.
 - ~~Objects created outside migrations~~ **Resolved in phase 2a** (migration 0033): `UNIQUE (rule_id, customer_id, role)` and `UNIQUE (sigma_id)` on `rule_yaml_representations` and the `pg_trgm` extension existed only in the development database; 0033 creates them if missing.
 - ~~Migration 0032's downgrade~~ **Resolved in phase 2a**: it now recreates the 0031 tables (empty), so a downgraded database can be upgraded again.
+- **Celery time limits in production:** `app/workers/celery_app.py` sets `task_time_limit=300` for every task. The Windows development worker runs `--pool=solo`, where Celery doesn't enforce time limits, so multi-hour embedding and Sigma batches complete today. On a Linux worker (prefork pool) they would be killed after 5 minutes, skipping their error handling and leaving the job `running`. Must be solved with per-task limits and chunking (phase 3) before production.
 - **Embedding dimension:** 1024 per the Qwen3-Embedding-0.6B model card; confirmed against the loaded model before phase 5.
