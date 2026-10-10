@@ -4,6 +4,7 @@ from app.db.models.customer_credentials import CustomerCredentials
 from app.db.models.embedding_job import EmbeddingJob  # noqa: F401
 from app.db.models.log_source_type_reference import LogSourceTypeReference
 from app.db.models.mitre_mapping import MitreMapping
+from app.db.models.mitre_tactic import MitreTactic  # noqa: F401
 from app.db.models.mitre_technique_catalog import MitreTechniqueCatalog  # noqa: F401
 from app.db.models.rule import Rule
 from app.db.models.rule_building_block import RuleBuildingBlock
@@ -32,6 +33,7 @@ __all__ = [
     "RuleYamlRepresentation",
     "SigmaGenerationJob",
     "EmbeddingJob",
+    "MitreTactic",
     "MitreTechniqueCatalog",
     "RuleMitreUnified",
 ]
